@@ -1,0 +1,1 @@
+Aplicación local en Python para control de clientes
