@@ -1,4 +1,4 @@
-CREATE TABLE clientes (
+CREATE TABLE IF NOT EXISTS clientes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre TEXT NOT NULL,
     telefono TEXT,
@@ -10,7 +10,7 @@ CREATE TABLE clientes (
     observaciones TEXT
 );
 
-CREATE TABLE cuotas (
+CREATE TABLE IF NOT EXISTS cuotas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     cliente_id INTEGER,
     anio INTEGER,
@@ -22,7 +22,7 @@ CREATE TABLE cuotas (
     FOREIGN KEY(cliente_id) REFERENCES clientes(id)
 );
 
-CREATE TABLE pagos (
+CREATE TABLE IF NOT EXISTS pagos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     cliente_id INTEGER,
     fecha_pago TEXT,
@@ -33,7 +33,7 @@ CREATE TABLE pagos (
     FOREIGN KEY(cliente_id) REFERENCES clientes(id)
 );
 
-CREATE TABLE aplicacion_pagos (
+CREATE TABLE IF NOT EXISTS aplicacion_pagos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     pago_id INTEGER,
     cuota_id INTEGER,
