@@ -1,59 +1,61 @@
-from app.database.db import get_connection
-
-def calcular_deuda_cliente(cliente_id):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT 
-            c.id,
-            c.importe_previsto,
-            COALESCE(SUM(ap.importe_aplicado), 0) AS total_pagado
-        FROM cuotas c
-        LEFT JOIN aplicacion_pagos ap ON c.id = ap.cuota_id
-        WHERE c.cliente_id = ?
-        GROUP BY c.id, c.importe_previsto
-    """, (cliente_id,))
-
-    cuotas = cursor.fetchall()
-    conn.close()
-
-    deuda_total = 0
-    cuotas_pendientes = 0
-
-    for cuota in cuotas:
-        pendiente = cuota["importe_previsto"] - cuota["total_pagado"]
-        if pendiente > 0:
-            deuda_total += pendiente
-            cuotas_pendientes += 1
-
-    return deuda_total, cuotas_pendientes
-
-
 from app.database.models import create_tables
-from app.services.clientes_service import obtener_clientes
-from app.services.reportes_service import calcular_deuda_cliente, obtener_estado_riesgo
-from app.services.reportes_service import obtener_detalle_deuda
+from app.utils.excel_export import (
+    exportar_historico_detallado_cliente_excel,
+    exportar_historico_detallado_cliente_por_mes_excel,
+    exportar_historico_detallado_cliente_por_anio_excel,
+    exportar_historico_detallado_cliente_por_dia_excel,
+    exportar_historico_detallado_cliente_entre_fechas_excel,
+    exportar_historico_mes_excel,
+    exportar_historico_anio_excel,
+    exportar_historico_dia_excel,
+    exportar_historico_entre_fechas_excel,
+    exportar_clientes_con_deuda_excel,
+    exportar_clientes_baja_con_deuda_excel,
+    exportar_clientes_dados_de_alta_excel,
+    exportar_clientes_dados_de_baja_excel,
+)
 
 
 def main():
     create_tables()
+    print("Base de datos lista")
 
-    clientes = obtener_clientes()
+    # ========================================
+    # 1. Histórico detallado de un solo cliente
+    # ========================================
+    exportar_historico_detallado_cliente_excel(1)
 
-    for cliente in clientes:
-        deuda_total, cuotas_pendientes = calcular_deuda_cliente(cliente["id"])
-        estado = obtener_estado_riesgo(cliente["id"], cliente["activo"])
-        detalle = obtener_detalle_deuda(cliente["id"])
+    # Mismo cliente, filtrado por mes
+    exportar_historico_detallado_cliente_por_mes_excel(1, 2026, 3)
 
-        print("Cliente:", cliente["nombre"])
-        print("Deuda total:", deuda_total)
-        print("Detalle deuda:")
-        for d in detalle:
-            print(f"Mes {d['mes']}/{d['anio']} → {d['pendiente']}€")
-        print("Cuotas pendientes:", cuotas_pendientes)
-        print("Estado:", estado)
-        print("-" * 30)
+    # Mismo cliente, filtrado por año
+    exportar_historico_detallado_cliente_por_anio_excel(1, 2026)
+
+    # Mismo cliente, filtrado por día
+    exportar_historico_detallado_cliente_por_dia_excel(1, "2026-03-31")
+
+    # Mismo cliente, entre fechas
+    exportar_historico_detallado_cliente_entre_fechas_excel(1, "2026-01-01", "2026-06-30")
+
+    # ========================================
+    # 2. Histórico global detallado
+    # ========================================
+    exportar_historico_mes_excel(2026, 3)
+    exportar_historico_anio_excel(2026)
+    exportar_historico_dia_excel("2026-03-31")
+    exportar_historico_entre_fechas_excel("2026-01-01", "2026-06-30")
+
+    # ========================================
+    # 6 y 7. Deuda
+    # ========================================
+    exportar_clientes_con_deuda_excel()
+    exportar_clientes_baja_con_deuda_excel()
+
+    # ========================================
+    # 8 y 9. Altas y bajas
+    # ========================================
+    exportar_clientes_dados_de_alta_excel()
+    exportar_clientes_dados_de_baja_excel()
 
 
 if __name__ == "__main__":
