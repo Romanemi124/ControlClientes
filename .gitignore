@@ -1,0 +1,15 @@
+# Carpetas que NO quiero subir a GitHub
+data/
+templates/
+exports/
+
+# Archivos que NO quiero subir a GitHub
+*.db
+*.xlsx
+
+# Python
+__pycache__/
+*.pyc
+
+# Entornos
+.env
