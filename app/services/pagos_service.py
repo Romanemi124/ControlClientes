@@ -114,3 +114,83 @@ def registrar_pago(cliente_id, importe, metodo_pago, fecha_pago=None, referencia
 
     conn.commit()
     conn.close()
+
+
+def obtener_ultimos_pagos(limite=10):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT 
+            p.fecha_pago,
+            p.importe_pagado,
+            p.metodo_pago,
+            c.nombre
+        FROM pagos p
+        JOIN clientes c ON p.cliente_id = c.id
+        ORDER BY p.fecha_pago DESC, p.id DESC
+        LIMIT ?
+    """, (limite,))
+
+    pagos = cursor.fetchall()
+    conn.close()
+    return pagos
+
+
+def get_pagos_devueltos():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            c.nombre,
+            cu.importe_previsto AS importe,
+            cu.fecha_vencimiento AS fecha
+        FROM cuotas cu
+        JOIN clientes c ON cu.cliente_id = c.id
+        WHERE cu.estado_cuota = 'devuelta'
+        ORDER BY cu.fecha_vencimiento DESC
+    """)
+
+    filas = cursor.fetchall()
+    conn.close()
+
+    return [
+        {
+            "nombre": fila["nombre"],
+            "importe": fila["importe"],
+            "fecha": fila["fecha"],
+        }
+        for fila in filas
+    ]
+
+
+def get_cuotas_vencidas():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            c.nombre,
+            cu.fecha_vencimiento AS fecha,
+            cu.importe_previsto AS importe,
+            cu.estado_cuota
+        FROM cuotas cu
+        JOIN clientes c ON cu.cliente_id = c.id
+        WHERE cu.fecha_vencimiento < DATE('now')
+          AND cu.estado_cuota != 'pagada'
+        ORDER BY cu.fecha_vencimiento ASC
+    """)
+
+    filas = cursor.fetchall()
+    conn.close()
+
+    return [
+        {
+            "nombre": fila["nombre"],
+            "fecha": fila["fecha"],
+            "importe": fila["importe"],
+            "estado": fila["estado_cuota"],
+        }
+        for fila in filas
+    ]

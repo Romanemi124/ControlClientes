@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="cards-grid">
+
+    <div class="card">
+        <h3>Total clientes</h3>
+        <p class="big-number">{{ total_clientes }}</p>
+    </div>
+
+    <div class="card">
+        <h3>Clientes activos</h3>
+        <p class="big-number">{{ clientes_activos }}</p>
+    </div>
+
+    <div class="card">
+        <h3>Clientes con deuda</h3>
+        <p class="big-number">{{ clientes_deuda }}</p>
+    </div>
+
+    <div class="card">
+        <h3>Deuda total</h3>
+        <p class="big-number">{{ deuda_total }} €</p>
+    </div>
+
+</div>
+
+
+<div class="alertas-container">
+
+    <div class="alerta-card">
+        <h3>💰 Clientes con mayor deuda</h3>
+        <table class="alerta-table">
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Importe (€)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in clientes_mayor_deuda %}
+                <tr>
+                    <td>{{ c.nombre }}</td>
+                    <td>{{ c.deuda }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="alerta-card">
+        <h3>⚠️ Pagos devueltos</h3>
+        <table class="alerta-table">
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Importe (€)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in pagos_devueltos %}
+                <tr>
+                    <td>{{ p.nombre }}</td>
+                    <td>{{ p.importe }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="alerta-card">
+        <h3>📅 Cuotas vencidas</h3>
+        <table class="alerta-table">
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Importe (€)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in cuotas_vencidas %}
+                <tr>
+                    <td>{{ c.nombre }}</td>
+                    <td>{{ c.importe }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+
+<div class="panel">
+    <div class="panel-header">
+        <h2>Últimos pagos</h2>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Cliente</th>
+                <th>Fecha</th>
+                <th>Importe</th>
+                <th>Método</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pago in ultimos_pagos %}
+            <tr>
+                <td>{{ pago.nombre }}</td>
+                <td>{{ pago.fecha_pago }}</td>
+                <td>{{ pago.importe_pagado }} €</td>
+                <td>{{ pago.metodo_pago }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+{% endblock %}

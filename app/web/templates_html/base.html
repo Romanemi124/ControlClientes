@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }} | ControlClientes</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <h2>ControlClientes</h2>
+                <p>Gestión local</p>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-link {% if page_title == 'Dashboard' %}active{% endif %}">Dashboard</a>
+                <a href="/clientes/" class="nav-link {% if page_title == 'Clientes' %}active{% endif %}">Clientes</a>
+                <a href="/pagos/" class="nav-link {% if page_title == 'Pagos' %}active{% endif %}">Pagos</a>
+                <a href="/deuda/" class="nav-link {% if page_title == 'Deuda' %}active{% endif %}">Deuda</a>
+                <a href="/exportaciones/" class="nav-link {% if page_title == 'Exportaciones' %}active{% endif %}">Exportaciones</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <h1>{{ page_title }}</h1>
+            </header>
+
+            <section class="content-area">
+                {% block content %}{% endblock %}
+            </section>
+        </main>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

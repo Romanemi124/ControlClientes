@@ -64,3 +64,23 @@ def reactivar_cliente(cliente_id):
 
     conn.commit()
     conn.close()
+
+
+def get_clientes_mayor_deuda():
+    from app.services.reportes_service import obtener_clientes_con_deuda
+
+    clientes_deuda = obtener_clientes_con_deuda()
+
+    return [
+        {
+            "nombre": cliente["nombre"],
+            "deuda": cliente["deuda_total"],
+        }
+        for cliente in sorted(
+            clientes_deuda,
+            key=lambda x: x["deuda_total"],
+            reverse=True
+        )
+    ]
+
+

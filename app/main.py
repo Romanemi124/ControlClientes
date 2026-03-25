@@ -1,62 +1,23 @@
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from app.database.models import create_tables
-from app.utils.excel_export import (
-    exportar_historico_detallado_cliente_excel,
-    exportar_historico_detallado_cliente_por_mes_excel,
-    exportar_historico_detallado_cliente_por_anio_excel,
-    exportar_historico_detallado_cliente_por_dia_excel,
-    exportar_historico_detallado_cliente_entre_fechas_excel,
-    exportar_historico_mes_excel,
-    exportar_historico_anio_excel,
-    exportar_historico_dia_excel,
-    exportar_historico_entre_fechas_excel,
-    exportar_clientes_con_deuda_excel,
-    exportar_clientes_baja_con_deuda_excel,
-    exportar_clientes_dados_de_alta_excel,
-    exportar_clientes_dados_de_baja_excel,
-)
+from app.web.routes.dashboard import router as dashboard_router
+from app.web.routes.clientes import router as clientes_router
+from app.web.routes.deuda import router as deuda_router
+from app.web.routes.pagos import router as pagos_router
+from app.web.routes.exportaciones import router as exportaciones_router
 
+app = FastAPI(title="ControlClientes")
 
-def main():
-    create_tables()
-    print("Base de datos lista")
+# Crear tablas al arrancar
+create_tables()
 
-    # ========================================
-    # 1. Histórico detallado de un solo cliente
-    # ========================================
-    exportar_historico_detallado_cliente_excel(1)
+# Archivos estáticos
+app.mount("/static", StaticFiles(directory="app/web/static"), name="static")
 
-    # Mismo cliente, filtrado por mes
-    exportar_historico_detallado_cliente_por_mes_excel(1, 2026, 3)
-
-    # Mismo cliente, filtrado por año
-    exportar_historico_detallado_cliente_por_anio_excel(1, 2026)
-
-    # Mismo cliente, filtrado por día
-    exportar_historico_detallado_cliente_por_dia_excel(1, "2026-03-31")
-
-    # Mismo cliente, entre fechas
-    exportar_historico_detallado_cliente_entre_fechas_excel(1, "2026-01-01", "2026-06-30")
-
-    # ========================================
-    # 2. Histórico global detallado
-    # ========================================
-    exportar_historico_mes_excel(2026, 3)
-    exportar_historico_anio_excel(2026)
-    exportar_historico_dia_excel("2026-03-31")
-    exportar_historico_entre_fechas_excel("2026-01-01", "2026-06-30")
-
-    # ========================================
-    # 6 y 7. Deuda
-    # ========================================
-    exportar_clientes_con_deuda_excel()
-    exportar_clientes_baja_con_deuda_excel()
-
-    # ========================================
-    # 8 y 9. Altas y bajas
-    # ========================================
-    exportar_clientes_dados_de_alta_excel()
-    exportar_clientes_dados_de_baja_excel()
-
-
-if __name__ == "__main__":
-    main()
+# Rutas
+app.include_router(dashboard_router)
+app.include_router(clientes_router)
+app.include_router(deuda_router)
+app.include_router(pagos_router)
+app.include_router(exportaciones_router)

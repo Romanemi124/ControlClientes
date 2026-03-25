@@ -374,3 +374,19 @@ def obtener_historico_detallado_entre_fechas(fecha_inicio, fecha_fin):
         fecha_inicio=fecha_inicio,
         fecha_fin=fecha_fin
     )
+
+
+# =========================================================
+# CLIENTES CRÍTICOS
+# =========================================================
+
+def obtener_clientes_criticos(limite=5):
+    todos = obtener_deuda_todos_clientes()
+
+    # ordenar por deuda descendente
+    ordenados = sorted(todos, key=lambda x: x["deuda_total"], reverse=True)
+
+    # solo los que deben dinero
+    con_deuda = [c for c in ordenados if c["deuda_total"] > 0]
+
+    return con_deuda[:limite]
