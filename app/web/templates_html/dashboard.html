@@ -27,6 +27,22 @@
 </div>
 
 
+<div class="panel">
+    <div class="panel-header">
+        <h2>📈 Ingresos y deuda por año</h2>
+    </div>
+
+    <select id="selector-anio">
+        <option value="{{ anio_actual }}">{{ anio_actual }}</option>
+        <option value="{{ anio_actual - 1 }}">{{ anio_actual - 1 }}</option>
+        <option value="{{ anio_actual - 2 }}">{{ anio_actual - 2 }}</option>
+    </select>
+
+    <div style="margin-top: 20px; height: 320px;">
+        <canvas id="graficaIngresos"></canvas>
+    </div>
+</div>
+
 <div class="alertas-container">
 
     <div class="alerta-card">
@@ -91,33 +107,97 @@
 
 </div>
 
-
 <div class="panel">
     <div class="panel-header">
         <h2>Últimos pagos</h2>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Cliente</th>
-                <th>Fecha</th>
-                <th>Importe</th>
-                <th>Método</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for pago in ultimos_pagos %}
-            <tr>
-                <td>{{ pago.nombre }}</td>
-                <td>{{ pago.fecha_pago }}</td>
-                <td>{{ pago.importe_pagado }} €</td>
-                <td>{{ pago.metodo_pago }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Fecha</th>
+                    <th>Importe</th>
+                    <th>Método</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pago in ultimos_pagos %}
+                <tr>
+                    <td>{{ pago.nombre }}</td>
+                    <td>{{ pago.fecha_pago }}</td>
+                    <td>{{ pago.importe_pagado }} €</td>
+                    <td>{{ pago.metodo_pago }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
+
+<!-- Gráfica de ingresos y deuda -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+window.graficaDatos = {
+    ingresos: {{ ingresos | tojson }},
+    deuda: {{ deuda | tojson }}
+};
+
+const ctx = document.getElementById("graficaIngresos");
+let chart = null;
+
+function crearGrafica(datos) {
+    if (!ctx) return;
+
+    if (chart) {
+        chart.destroy();
+    }
+
+    chart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"],
+            datasets: [
+                {
+                    label: "Ingresos (€)",
+                    data: datos.ingresos,
+                    borderColor: "#4f46e5",
+                    backgroundColor: "rgba(79, 70, 229, 0.1)",
+                    tension: 0.3
+                },
+                {
+                    label: "Deuda (€)",
+                    data: datos.deuda,
+                    borderColor: "#ef4444",
+                    backgroundColor: "rgba(239, 68, 68, 0.1)",
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+}
+
+crearGrafica(window.graficaDatos);
+
+const selector = document.getElementById("selector-anio");
+
+selector.addEventListener("change", async function () {
+    const anio = this.value;
+
+    try {
+        const response = await fetch(`/grafica/${anio}`);
+        const datos = await response.json();
+        crearGrafica(datos);
+    } catch (error) {
+        console.error("Error cargando gráfica:", error);
+    }
+});
+</script>
 
 {% endblock %}

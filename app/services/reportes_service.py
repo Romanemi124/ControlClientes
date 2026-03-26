@@ -390,3 +390,53 @@ def obtener_clientes_criticos(limite=5):
     con_deuda = [c for c in ordenados if c["deuda_total"] > 0]
 
     return con_deuda[:limite]
+
+
+
+def obtener_ingresos_y_deuda_por_anio(anio):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT 
+            CAST(strftime('%m', fecha_pago) AS INTEGER) as mes,
+            SUM(importe_pagado) as total
+        FROM pagos
+        WHERE strftime('%Y', fecha_pago) = ?
+        GROUP BY mes
+        ORDER BY mes
+    """, (str(anio),))
+
+    ingresos_dict = {row["mes"]: row["total"] for row in cursor.fetchall()}
+
+    cursor.execute("""
+        SELECT
+            mes,
+            SUM(
+                importe_previsto - COALESCE((
+                    SELECT SUM(ap.importe_aplicado)
+                    FROM aplicacion_pagos ap
+                    WHERE ap.cuota_id = cuotas.id
+                ), 0)
+            ) as pendiente
+        FROM cuotas
+        WHERE anio = ?
+        GROUP BY mes
+        ORDER BY mes
+    """, (anio,))
+
+    deuda_dict = {row["mes"]: row["pendiente"] for row in cursor.fetchall()}
+
+    conn.close()
+
+    ingresos = []
+    deuda = []
+
+    for mes in range(1, 13):
+        ingresos.append(float(ingresos_dict.get(mes, 0) or 0))
+        deuda.append(float(deuda_dict.get(mes, 0) or 0))
+
+    return ingresos, deuda
+
+
+

@@ -1,13 +1,22 @@
+from datetime import datetime
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from app.services.clientes_service import obtener_clientes, get_clientes_mayor_deuda
-from app.services.reportes_service import obtener_clientes_con_deuda
-from app.services.pagos_service import obtener_ultimos_pagos, get_pagos_devueltos, get_cuotas_vencidas
+from app.services.reportes_service import (
+    obtener_clientes_con_deuda,
+    obtener_ingresos_y_deuda_por_anio,
+)
+from app.services.pagos_service import (
+    obtener_ultimos_pagos,
+    get_pagos_devueltos,
+    get_cuotas_vencidas,
+)
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/web/templates_html")
+
 
 @router.get("/", response_class=HTMLResponse)
 def dashboard(request: Request):
@@ -24,6 +33,9 @@ def dashboard(request: Request):
     pagos_devueltos = get_pagos_devueltos()[:5]
     cuotas_vencidas = get_cuotas_vencidas()[:5]
 
+    anio_actual = datetime.now().year
+    ingresos, deuda = obtener_ingresos_y_deuda_por_anio(anio_actual)
+
     return templates.TemplateResponse(
         request,
         "dashboard.html",
@@ -38,5 +50,21 @@ def dashboard(request: Request):
             "clientes_mayor_deuda": clientes_mayor_deuda,
             "pagos_devueltos": pagos_devueltos,
             "cuotas_vencidas": cuotas_vencidas,
+            "anio_actual": anio_actual,
+            "ingresos": ingresos,
+            "deuda": deuda,
         }
     )
+
+
+@router.get("/grafica/{anio}")
+def datos_grafica(anio: int):
+    ingresos, deuda = obtener_ingresos_y_deuda_por_anio(anio)
+
+    return JSONResponse({
+        "ingresos": ingresos,
+        "deuda": deuda
+    })
+
+
+
