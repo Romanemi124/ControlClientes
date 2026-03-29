@@ -1,40 +1,426 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="panel">
-    <div class="panel-header">
-        <h2>Listado de clientes</h2>
-    </div>
 
-    <div class="table-wrapper">
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nombre</th>
-                    <th>Teléfono</th>
-                    <th>Email</th>
-                    <th>Activo</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for cliente in clientes %}
-                <tr>
-                    <td>{{ cliente.id }}</td>
-                    <td>{{ cliente.nombre }}</td>
-                    <td>{{ cliente.telefono }}</td>
-                    <td>{{ cliente.email }}</td>
-                    <td>
-                        {% if cliente.activo == 1 %}
-                            Sí
-                        {% else %}
-                            No
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+<link rel="stylesheet" href="/static/css/clientes.css">
+
+<div class="clientes-page">
+
+    <!-- FICHA CLIENTE -->
+    <section class="cliente-ficha-card">
+        <div class="cliente-ficha-header">
+            <h2>Ficha cliente</h2>
+        </div>
+
+        <div class="cliente-form-grid">
+            <div class="campo">
+            <label>ID</label>
+            <input id="id_visible" placeholder="ID" readonly>
+            <input id="id" type="hidden">
+        </div>
+
+        <div class="campo">
+            <label>Nombre</label>
+            <input id="nombre" placeholder="Nombre" required>
+        </div>
+
+        <div class="campo">
+            <label>Teléfono</label>
+            <div class="telefono-group">
+                <select id="prefijo" class="input-estilo prefijo-select">
+                    <option value="+34" selected>🇪🇸 +34</option>
+                    <option value="+33">🇫🇷 +33</option>
+                    <option value="+351">🇵🇹 +351</option>
+                    <option value="+44">🇬🇧 +44</option>
+                    <option value="+49">🇩🇪 +49</option>
+                    <option value="+39">🇮🇹 +39</option>
+                </select>
+
+                <input id="telefono" placeholder="Número de teléfono" required>
+            </div>
+        </div>
+
+        <div class="campo">
+            <label>Email</label>
+            <input id="email" placeholder="Email" required>
+        </div>
+
+        <div class="campo">
+            <label>Dirección</label>
+            <input id="direccion" placeholder="Dirección" required>
+        </div>
+
+        <div class="campo">
+            <label>Fecha alta</label>
+            <input id="fecha_alta" type="date" required>
+        </div>
+
+        <div class="campo">
+            <label>Fecha baja</label>
+            <input id="fecha_baja" type="date">
+        </div>
+
+        <div class="campo">
+            <label>Activo</label>
+            <div class="select-wrapper">
+                <select id="activo" class="input-estilo">
+                    <option value="1">Activo</option>
+                    <option value="0">Inactivo</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="campo campo-observaciones">
+            <label>Observaciones</label>
+            <textarea id="observaciones" placeholder="Observaciones"></textarea>
+        </div>
+        </div>
+
+        <div class="cliente-form-buttons">
+            <button type="button" class="btn btn-primary" onclick="guardarCliente()">Guardar</button>
+            <button type="button" class="btn btn-primary" onclick="modificarCliente()">Modificar</button>
+            <button type="button" class="btn btn-light" onclick="limpiarFormulario()">Limpiar</button>
+        </div>
+    </section>
+
+    <!-- BUSCADOR -->
+    <section class="clientes-search-card">
+        <div class="clientes-search-header">
+            <h2>Clientes</h2>
+        </div>
+
+        <div class="clientes-search-box">
+            <input type="text" id="buscar" placeholder="Buscar cliente por nombre...">
+        </div>
+    </section>
+
+    <!-- TABLA -->
+    <section class="clientes-table-card">
+        <div class="clientes-table-tools">
+            <div class="campo-tool">
+                <label for="ordenar">Ordenar</label>
+                <select id="ordenar">
+                    <option value="id_asc">ID: menor a mayor</option>
+                    <option value="id_desc">ID: mayor a menor</option>
+                    <option value="nombre_asc">Nombre: A-Z</option>
+                    <option value="nombre_desc">Nombre: Z-A</option>
+                </select>
+            </div>
+            <div class="campo-tool">
+                <label for="filtroActivo">Estado</label>
+                <select id="filtroActivo">
+                    <option value="todos">Todos</option>
+                    <option value="1">Activos</option>
+                    <option value="0">Inactivos</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="clientes-table-wrapper">
+            <table class="clientes-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Teléfono</th>
+                        <th>Email</th>
+                        <th>Fecha alta</th>
+                        <th>Activo</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-body">
+                    {% for c in clientes %}
+                    <tr onclick="seleccionarCliente(this)"
+                        data-id="{{ c.id }}"
+                        data-nombre="{{ c.nombre }}"
+                        data-prefijo="{{ c.prefijo if c.prefijo else '+34' }}"
+                        data-telefono="{{ c.telefono }}"
+                        data-email="{{ c.email }}"
+                        data-direccion="{{ c.direccion }}"
+                        data-fecha_alta="{{ c.fecha_alta }}"
+                        data-fecha_baja="{{ c.fecha_baja }}"
+                        data-activo="{{ c.activo }}"
+                        data-observaciones="{{ c.observaciones }}">
+                        <td>{{ c.id }}</td>
+                        <td>{{ c.nombre }}</td>
+                        <td>{{ c.telefono }}</td>
+                        <td>{{ c.email }}</td>
+                        <td>{{ c.fecha_alta }}</td>
+                        <td>{{ "Sí" if c.activo == 1 else "No" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
 </div>
+
+<script>
+let filasOriginales = [];
+
+document.addEventListener("DOMContentLoaded", function () {
+    filasOriginales = Array.from(document.querySelectorAll("#tabla-body tr"));
+
+    document.getElementById("buscar").addEventListener("keyup", aplicarFiltrosYOrden);
+    document.getElementById("ordenar").addEventListener("change", aplicarFiltrosYOrden);
+    document.getElementById("filtroActivo").addEventListener("change", aplicarFiltrosYOrden);
+});
+
+function seleccionarCliente(row) {
+    document.querySelectorAll("#tabla-body tr").forEach(tr => tr.classList.remove("selected"));
+    row.classList.add("selected");
+
+    document.getElementById("id").value = row.dataset.id;
+    document.getElementById("id_visible").value = row.dataset.id;
+
+    document.getElementById("nombre").value = row.dataset.nombre || "";
+    document.getElementById("prefijo").value = row.dataset.prefijo || "+34";
+    document.getElementById("telefono").value = row.dataset.telefono || "";
+    document.getElementById("email").value = row.dataset.email || "";
+    document.getElementById("direccion").value = row.dataset.direccion || "";
+    document.getElementById("fecha_alta").value = row.dataset.fecha_alta || "";
+    document.getElementById("fecha_baja").value = row.dataset.fecha_baja || "";
+    document.getElementById("activo").value = row.dataset.activo || "1";
+    document.getElementById("observaciones").value = row.dataset.observaciones || "";
+}
+
+function limpiarFormulario() {
+    document.getElementById("id").value = "";
+    document.getElementById("id_visible").value = "";
+    document.getElementById("nombre").value = "";
+    document.getElementById("prefijo").value = "+34";
+    document.getElementById("telefono").value = "";
+    document.getElementById("email").value = "";
+    document.getElementById("direccion").value = "";
+    document.getElementById("fecha_alta").value = "";
+    document.getElementById("fecha_baja").value = "";
+    document.getElementById("activo").value = "1";
+    document.getElementById("observaciones").value = "";
+
+    document.querySelectorAll("#tabla-body tr").forEach(tr => tr.classList.remove("selected"));
+}
+
+function getPayload() {
+    return {
+        id: document.getElementById("id").value,
+        nombre: document.getElementById("nombre").value.trim(),
+        prefijo: document.getElementById("prefijo").value,
+        telefono: document.getElementById("telefono").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        direccion: document.getElementById("direccion").value.trim(),
+        fecha_alta: document.getElementById("fecha_alta").value.trim(),
+        fecha_baja: document.getElementById("fecha_baja").value.trim(),
+        activo: document.getElementById("activo").value,
+        observaciones: document.getElementById("observaciones").value.trim()
+    };
+}
+
+function validarEmail(email) {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+}
+
+function validarTelefono(prefijo, telefono) {
+    const telefonoLimpio = telefono.replace(/[\s-]/g, "");
+
+    if (!/^\d+$/.test(telefonoLimpio)) {
+        return false;
+    }
+
+    if (prefijo === "+34") {
+        return /^[6789]\d{8}$/.test(telefonoLimpio);
+    }
+
+    return telefonoLimpio.length >= 6 && telefonoLimpio.length <= 15;
+}
+
+function validarCampos(p) {
+    let errores = [];
+
+    if (!p.nombre) errores.push("Nombre");
+    if (!p.telefono) errores.push("Teléfono");
+    if (!p.email) errores.push("Email");
+    if (!p.direccion) errores.push("Dirección");
+    if (!p.fecha_alta) errores.push("Fecha de alta");
+
+    if (p.email && !validarEmail(p.email)) {
+        errores.push("Email no válido");
+    }
+
+    if (p.telefono && !validarTelefono(p.prefijo, p.telefono)) {
+        if (p.prefijo === "+34") {
+            errores.push("Teléfono no válido (para +34 debe tener 9 dígitos y empezar por 6, 7, 8 o 9)");
+        } else {
+            errores.push("Teléfono no válido (debe tener entre 6 y 15 dígitos)");
+        }
+    }
+
+    if (errores.length > 0) {
+        let mensaje = "❌ Revisa los siguientes campos:\n\n";
+
+        errores.forEach(campo => {
+            mensaje += "• " + campo + "\n";
+        });
+
+        mensaje += "\nCorrígelo antes de continuar.";
+
+        alert(mensaje);
+        return false;
+    }
+
+    return true;
+}
+
+function textoActivo(valor) {
+    return valor == 1 || valor == "1" ? "Sí" : "No";
+}
+
+function crearFilaCliente(cliente) {
+    const tr = document.createElement("tr");
+
+    tr.dataset.id = cliente.id;
+    tr.dataset.nombre = cliente.nombre || "";
+    tr.dataset.prefijo = cliente.prefijo || "+34";
+    tr.dataset.telefono = cliente.telefono || "";
+    tr.dataset.email = cliente.email || "";
+    tr.dataset.direccion = cliente.direccion || "";
+    tr.dataset.fecha_alta = cliente.fecha_alta || "";
+    tr.dataset.fecha_baja = cliente.fecha_baja || "";
+    tr.dataset.activo = cliente.activo;
+    tr.dataset.observaciones = cliente.observaciones || "";
+
+    tr.onclick = function () {
+        seleccionarCliente(tr);
+    };
+
+    tr.innerHTML = `
+        <td>${cliente.id}</td>
+        <td>${cliente.nombre || ""}</td>
+        <td>${cliente.telefono || ""}</td>
+        <td>${cliente.email || ""}</td>
+        <td>${cliente.fecha_alta || ""}</td>
+        <td>${textoActivo(cliente.activo)}</td>
+    `;
+
+    return tr;
+}
+
+function actualizarFilaTabla(cliente) {
+    const tbody = document.getElementById("tabla-body");
+    const filaExistente = Array.from(tbody.querySelectorAll("tr")).find(
+        tr => tr.dataset.id == cliente.id
+    );
+
+    const nuevaFila = crearFilaCliente(cliente);
+
+    if (filaExistente) {
+        filaExistente.replaceWith(nuevaFila);
+    } else {
+        tbody.appendChild(nuevaFila);
+    }
+
+    filasOriginales = Array.from(document.querySelectorAll("#tabla-body tr"));
+    aplicarFiltrosYOrden();
+    seleccionarCliente(nuevaFila);
+}
+
+async function enviar(url, payload, mensaje) {
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+            alert(data.error || "Error");
+            return false;
+        }
+
+        if (data.cliente) {
+            actualizarFilaTabla(data.cliente);
+        }
+
+        alert(mensaje);
+        return true;
+    } catch (error) {
+        console.error(error);
+        alert("Error de conexión");
+        return false;
+    }
+}
+
+async function guardarCliente() {
+    const payload = getPayload();
+
+    if (payload.id) {
+        alert("Para un cliente existente usa el botón Modificar");
+        return;
+    }
+
+    if (!validarCampos(payload)) return;
+
+    await enviar("/clientes/guardar", payload, "Cliente creado correctamente");
+}
+
+async function modificarCliente() {
+    const payload = getPayload();
+
+    if (!payload.id) {
+        alert("Selecciona un cliente para modificar");
+        return;
+    }
+
+    if (!validarCampos(payload)) return;
+
+    await enviar("/clientes/guardar", payload, "Cliente modificado correctamente");
+}
+
+function aplicarFiltrosYOrden() {
+    const filtroTexto = document.getElementById("buscar").value.toLowerCase().trim();
+    const orden = document.getElementById("ordenar").value;
+    const filtroActivo = document.getElementById("filtroActivo").value;
+
+    const tbody = document.getElementById("tabla-body");
+
+    let filasFiltradas = filasOriginales.filter(fila => {
+        const nombre = (fila.dataset.nombre || "").toLowerCase();
+        const activo = fila.dataset.activo || "1";
+
+        const cumpleTexto = nombre.includes(filtroTexto);
+        const cumpleActivo = filtroActivo === "todos" || activo === filtroActivo;
+
+        return cumpleTexto && cumpleActivo;
+    });
+
+    filasFiltradas.sort((a, b) => {
+        const idA = parseInt(a.dataset.id || "0", 10);
+        const idB = parseInt(b.dataset.id || "0", 10);
+        const nombreA = (a.dataset.nombre || "").toLowerCase();
+        const nombreB = (b.dataset.nombre || "").toLowerCase();
+
+        switch (orden) {
+            case "id_asc":
+                return idA - idB;
+            case "id_desc":
+                return idB - idA;
+            case "nombre_asc":
+                return nombreA.localeCompare(nombreB);
+            case "nombre_desc":
+                return nombreB.localeCompare(nombreA);
+            default:
+                return 0;
+        }
+    });
+
+    tbody.innerHTML = "";
+    filasFiltradas.forEach(fila => tbody.appendChild(fila));
+}
+</script>
+
 {% endblock %}
