@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS clientes (
     fecha_alta TEXT,
     fecha_baja TEXT,
     activo INTEGER DEFAULT 1,
-    observaciones TEXT,
+    observaciones TEXT
 );
 
 CREATE TABLE IF NOT EXISTS cuotas (
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS cuotas (
     anio INTEGER,
     mes INTEGER,
     importe_previsto REAL,
-    estado_cuota TEXT,
+    estado_cuota TEXT DEFAULT 'pendiente',
     fecha_vencimiento TEXT,
     observaciones TEXT,
     FOREIGN KEY(cliente_id) REFERENCES clientes(id) ON DELETE CASCADE
