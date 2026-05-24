@@ -1,293 +1,162 @@
 import os
+from datetime import datetime
+
 import pandas as pd
+
+from app.services.clientes_service import obtener_clientes
+from app.services.pagos_service import buscar_pagos
 from app.services.reportes_service import (
+    obtener_deuda_todos_clientes,
     obtener_historico_detallado_cliente,
-    obtener_historico_detallado_cliente_por_mes,
-    obtener_historico_detallado_cliente_por_anio,
-    obtener_historico_detallado_cliente_por_dia,
-    obtener_historico_detallado_cliente_entre_fechas,
-    obtener_historico_detallado_por_mes,
-    obtener_historico_detallado_por_anio,
-    obtener_historico_detallado_por_dia,
-    obtener_historico_detallado_entre_fechas,
-    obtener_clientes_con_deuda,
-    obtener_clientes_baja_con_deuda,
-    obtener_clientes_dados_de_alta,
-    obtener_clientes_dados_de_baja,
 )
+
+EXPORT_DIR = "exports"
 
 
 def asegurar_carpeta_exports():
-    os.makedirs("exports", exist_ok=True)
+    os.makedirs(EXPORT_DIR, exist_ok=True)
+
+
+def nombre_archivo(nombre_base):
+    asegurar_carpeta_exports()
+    fecha = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return os.path.join(EXPORT_DIR, f"{nombre_base}_{fecha}.xlsx")
 
 
 def nombre_mes(numero_mes):
     meses = {
-        1: "Enero",
-        2: "Febrero",
-        3: "Marzo",
-        4: "Abril",
-        5: "Mayo",
-        6: "Junio",
-        7: "Julio",
-        8: "Agosto",
-        9: "Septiembre",
-        10: "Octubre",
-        11: "Noviembre",
-        12: "Diciembre",
+        1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
+        5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
+        9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre",
     }
     return meses.get(numero_mes, str(numero_mes))
 
 
-def _exportar_detalle_excel(datos, ruta):
-    asegurar_carpeta_exports()
-
-    if not datos:
-        print("No hay datos")
-        return
-
-    filas = []
-    for fila in datos:
-        filas.append({
-            "Cliente": fila["nombre"],
-            "Teléfono": fila["telefono"],
-            "Email": fila["email"],
-            "Dirección": fila["direccion"],
-            "Fecha alta": fila["fecha_alta"],
-            "Fecha baja": fila["fecha_baja"],
-            "Activo": "Sí" if fila["activo"] == 1 else "No",
-            "Año cuota": fila["anio"],
-            "Mes cuota": nombre_mes(fila["mes"]),
-            "Fecha vencimiento": fila["fecha_vencimiento"],
-            "Importe previsto": fila["importe_previsto"],
-            "Fecha pago": fila["fecha_pago"],
-            "Método pago": fila["metodo_pago"],
-            "Importe pago": fila["importe_pagado"],
-            "Importe aplicado": fila["importe_aplicado"],
-            "Referencia": fila["referencia"],
-            "Observaciones pago": fila["observaciones_pago"],
-            "Pendiente cuota": fila["pendiente"],
-            "Estado cuota": fila["estado_cuota"],
-        })
+def guardar_excel(filas, ruta, hoja="Datos"):
+    if not filas:
+        return None
 
     df = pd.DataFrame(filas)
-    df.to_excel(ruta, index=False)
-    print(f"Excel generado en: {ruta}")
+
+    with pd.ExcelWriter(ruta, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name=hoja)
+
+        worksheet = writer.sheets[hoja]
+
+        for column_cells in worksheet.columns:
+            max_length = 0
+            column_letter = column_cells[0].column_letter
+
+            for cell in column_cells:
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
+
+            worksheet.column_dimensions[column_letter].width = max_length + 3
+
+        worksheet.auto_filter.ref = worksheet.dimensions
+
+    return ruta
 
 
-# =========================================================
-# 1. HISTÓRICO DETALLADO DE UN SOLO CLIENTE
-# =========================================================
-
-def exportar_historico_detallado_cliente_excel(cliente_id, ruta=None):
-    datos = obtener_historico_detallado_cliente(cliente_id)
-
-    if not datos:
-        print("No hay datos para este cliente")
-        return
-
-    if ruta is None:
-        nombre_cliente = datos[0]["nombre"].replace(" ", "_")
-        ruta = f"exports/historico_detallado_{nombre_cliente}.xlsx"
-
-    _exportar_detalle_excel(datos, ruta)
-
-
-def exportar_historico_detallado_cliente_por_mes_excel(cliente_id, anio, mes, ruta=None):
-    datos = obtener_historico_detallado_cliente_por_mes(cliente_id, anio, mes)
-
-    if not datos:
-        print("No hay datos para este cliente en ese mes")
-        return
-
-    if ruta is None:
-        nombre_cliente = datos[0]["nombre"].replace(" ", "_")
-        ruta = f"exports/historico_detallado_{nombre_cliente}_{anio}_{mes:02d}.xlsx"
-
-    _exportar_detalle_excel(datos, ruta)
-
-
-def exportar_historico_detallado_cliente_por_anio_excel(cliente_id, anio, ruta=None):
-    datos = obtener_historico_detallado_cliente_por_anio(cliente_id, anio)
-
-    if not datos:
-        print("No hay datos para este cliente en ese año")
-        return
-
-    if ruta is None:
-        nombre_cliente = datos[0]["nombre"].replace(" ", "_")
-        ruta = f"exports/historico_detallado_{nombre_cliente}_{anio}.xlsx"
-
-    _exportar_detalle_excel(datos, ruta)
-
-
-def exportar_historico_detallado_cliente_por_dia_excel(cliente_id, fecha, ruta=None):
-    datos = obtener_historico_detallado_cliente_por_dia(cliente_id, fecha)
-
-    if not datos:
-        print("No hay datos para este cliente en ese día")
-        return
-
-    if ruta is None:
-        nombre_cliente = datos[0]["nombre"].replace(" ", "_")
-        ruta = f"exports/historico_detallado_{nombre_cliente}_{fecha}.xlsx"
-
-    _exportar_detalle_excel(datos, ruta)
-
-
-def exportar_historico_detallado_cliente_entre_fechas_excel(cliente_id, fecha_inicio, fecha_fin, ruta=None):
-    datos = obtener_historico_detallado_cliente_entre_fechas(cliente_id, fecha_inicio, fecha_fin)
-
-    if not datos:
-        print("No hay datos para este cliente en ese rango")
-        return
-
-    if ruta is None:
-        nombre_cliente = datos[0]["nombre"].replace(" ", "_")
-        ruta = f"exports/historico_detallado_{nombre_cliente}_{fecha_inicio}_a_{fecha_fin}.xlsx"
-
-    _exportar_detalle_excel(datos, ruta)
-
-
-# =========================================================
-# 2. HISTÓRICO DETALLADO GLOBAL
-# =========================================================
-
-def exportar_historico_mes_excel(anio, mes, ruta=None):
-    datos = obtener_historico_detallado_por_mes(anio, mes)
-
-    if ruta is None:
-        ruta = f"exports/historico_detallado_{anio}_{mes:02d}.xlsx"
-
-    _exportar_detalle_excel(datos, ruta)
-
-
-def exportar_historico_anio_excel(anio, ruta=None):
-    datos = obtener_historico_detallado_por_anio(anio)
-
-    if ruta is None:
-        ruta = f"exports/historico_detallado_{anio}.xlsx"
-
-    _exportar_detalle_excel(datos, ruta)
-
-
-def exportar_historico_dia_excel(fecha, ruta=None):
-    datos = obtener_historico_detallado_por_dia(fecha)
-
-    if ruta is None:
-        ruta = f"exports/historico_detallado_{fecha}.xlsx"
-
-    _exportar_detalle_excel(datos, ruta)
-
-
-def exportar_historico_entre_fechas_excel(fecha_inicio, fecha_fin, ruta=None):
-    datos = obtener_historico_detallado_entre_fechas(fecha_inicio, fecha_fin)
-
-    if ruta is None:
-        ruta = f"exports/historico_detallado_{fecha_inicio}_a_{fecha_fin}.xlsx"
-
-    _exportar_detalle_excel(datos, ruta)
-
-
-# =========================================================
-# 6. CLIENTES CON DEUDA
-# =========================================================
-
-def exportar_clientes_con_deuda_excel(ruta="exports/clientes_con_deuda.xlsx"):
-    asegurar_carpeta_exports()
-
-    datos = obtener_clientes_con_deuda()
-
-    if not datos:
-        print("No hay clientes con deuda")
-        return
+def exportar_clientes_totales_excel():
+    clientes = obtener_clientes()
 
     filas = []
-    for cliente in datos:
+    for c in clientes:
         filas.append({
-            "Nombre": cliente["nombre"],
-            "Teléfono": cliente["telefono"],
-            "Email": cliente["email"],
-            "Dirección": cliente["direccion"],
-            "Fecha alta": cliente["fecha_alta"],
-            "Fecha baja": cliente["fecha_baja"],
-            "Activo": "Sí" if cliente["activo"] == 1 else "No",
-            "Deuda total": cliente["deuda_total"],
-            "Cuotas pendientes": cliente["cuotas_pendientes"],
-            "Estado riesgo": cliente["estado_riesgo"],
-            "Detalle deuda": cliente["detalle_deuda_texto"],
+            "ID": c["id"],
+            "Nombre": c["nombre"],
+            "Prefijo": c["prefijo"],
+            "Teléfono": c["telefono"],
+            "Email": c["email"],
+            "Dirección": c["direccion"],
+            "Fecha alta": c["fecha_alta"],
+            "Fecha baja": c["fecha_baja"],
+            "Activo": "Sí" if c["activo"] == 1 else "No",
+            "Observaciones": c["observaciones"],
         })
 
-    df = pd.DataFrame(filas)
-    df.to_excel(ruta, index=False)
-    print(f"Excel generado en: {ruta}")
+    ruta = nombre_archivo("clientes_totales")
+    return guardar_excel(filas, ruta, "Clientes")
 
 
-# =========================================================
-# 7. CLIENTES DE BAJA CON DEUDA
-# =========================================================
-
-def exportar_clientes_baja_con_deuda_excel(ruta="exports/clientes_baja_con_deuda.xlsx"):
-    asegurar_carpeta_exports()
-
-    datos = obtener_clientes_baja_con_deuda()
-
-    if not datos:
-        print("No hay clientes de baja con deuda")
-        return
+def exportar_deudas_actuales_excel():
+    deudas = obtener_deuda_todos_clientes()
 
     filas = []
-    for cliente in datos:
+    for d in deudas:
+        if d["deuda_total"] <= 0:
+            continue
+
         filas.append({
-            "Nombre": cliente["nombre"],
-            "Teléfono": cliente["telefono"],
-            "Email": cliente["email"],
-            "Dirección": cliente["direccion"],
-            "Fecha alta": cliente["fecha_alta"],
-            "Fecha baja": cliente["fecha_baja"],
-            "Activo": "Sí" if cliente["activo"] == 1 else "No",
-            "Deuda total": cliente["deuda_total"],
-            "Cuotas pendientes": cliente["cuotas_pendientes"],
-            "Estado riesgo": cliente["estado_riesgo"],
-            "Detalle deuda": cliente["detalle_deuda_texto"],
+            "ID cliente": d["id"],
+            "Nombre": d["nombre"],
+            "Teléfono": d["telefono"],
+            "Email": d["email"],
+            "Dirección": d["direccion"],
+            "Fecha alta": d["fecha_alta"],
+            "Fecha baja": d["fecha_baja"],
+            "Activo": "Sí" if d["activo"] == 1 else "No",
+            "Deuda total": d["deuda_total"],
+            "Cuotas pendientes": d["cuotas_pendientes"],
+            "Estado riesgo": d["estado_riesgo"],
+            "Detalle deuda": d["detalle_deuda_texto"],
         })
 
-    df = pd.DataFrame(filas)
-    df.to_excel(ruta, index=False)
-    print(f"Excel generado en: {ruta}")
+    ruta = nombre_archivo("deudas_actuales")
+    return guardar_excel(filas, ruta, "Deudas")
 
 
-# =========================================================
-# 8. TODOS LOS CLIENTES DADOS DE ALTA
-# =========================================================
+def exportar_pagos_cliente_excel(cliente_nombre):
+    pagos = buscar_pagos(cliente_nombre=cliente_nombre)
 
-def exportar_clientes_dados_de_alta_excel(ruta="exports/clientes_dados_de_alta.xlsx"):
-    asegurar_carpeta_exports()
+    filas = []
+    for p in pagos:
+        filas.append({
+            "ID pago": p["id"],
+            "ID cliente": p["cliente_id"],
+            "Cliente": p["cliente_nombre"],
+            "Fecha pago": p["fecha_pago"],
+            "Importe pagado": p["importe_pagado"],
+            "Método pago": p["metodo_pago"],
+            "Referencia": p["referencia"],
+            "Observaciones": p["observaciones"],
+        })
 
-    datos = obtener_clientes_dados_de_alta()
-
-    if not datos:
-        print("No hay clientes dados de alta")
-        return
-
-    df = pd.DataFrame(datos)
-    df.to_excel(ruta, index=False)
-    print(f"Excel generado en: {ruta}")
+    nombre_limpio = cliente_nombre.strip().replace(" ", "_").lower()
+    ruta = nombre_archivo(f"pagos_cliente_{nombre_limpio}")
+    return guardar_excel(filas, ruta, "Pagos cliente")
 
 
-# =========================================================
-# 9. TODOS LOS CLIENTES DADOS DE BAJA
-# =========================================================
+def exportar_historico_cliente_excel(cliente_id):
+    historico = obtener_historico_detallado_cliente(cliente_id)
 
-def exportar_clientes_dados_de_baja_excel(ruta="exports/clientes_dados_de_baja.xlsx"):
-    asegurar_carpeta_exports()
+    filas = []
+    for h in historico:
+        filas.append({
+            "ID cliente": h["cliente_id"],
+            "Cliente": h["nombre"],
+            "Teléfono": h["telefono"],
+            "Email": h["email"],
+            "Dirección": h["direccion"],
+            "Fecha alta": h["fecha_alta"],
+            "Fecha baja": h["fecha_baja"],
+            "Activo": "Sí" if h["activo"] == 1 else "No",
+            "ID cuota": h["cuota_id"],
+            "Año cuota": h["anio"],
+            "Mes cuota": nombre_mes(h["mes"]),
+            "Fecha vencimiento": h["fecha_vencimiento"],
+            "Importe previsto": h["importe_previsto"],
+            "Estado cuota": h["estado_cuota"],
+            "ID pago": h["pago_id"],
+            "Fecha pago": h["fecha_pago"],
+            "Método pago": h["metodo_pago"],
+            "Importe pagado": h["importe_pagado"],
+            "Referencia": h["referencia"],
+            "Observaciones pago": h["observaciones_pago"],
+            "Importe aplicado": h["importe_aplicado"],
+            "Pendiente cuota": h["pendiente"],
+        })
 
-    datos = obtener_clientes_dados_de_baja()
-
-    if not datos:
-        print("No hay clientes dados de baja")
-        return
-
-    df = pd.DataFrame(datos)
-    df.to_excel(ruta, index=False)
-    print(f"Excel generado en: {ruta}")
+    ruta = nombre_archivo(f"historico_cliente_{cliente_id}")
+    return guardar_excel(filas, ruta, "Histórico cliente")

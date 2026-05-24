@@ -1,11 +1,153 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="panel">
-    <div class="panel-header">
-        <h2>Exportaciones</h2>
+<link rel="stylesheet" href="/static/css/exportaciones.css">
+
+<div class="exportaciones-page">
+
+    <div class="export-top-grid">
+        <div class="card export-card">
+            <h3>Clientes Totales</h3>
+            <p>Exporta todos los clientes registrados.</p>
+            <button class="btn-export" onclick="comprobarYDescargar('/exportaciones/clientes', 'No hay clientes para exportar.')">
+                Descargar Excel
+            </button>
+        </div>
+
+        <div class="card export-card">
+            <h3>Deudas Actuales</h3>
+            <p>Exporta clientes con deuda pendiente.</p>
+            <button class="btn-export" onclick="comprobarYDescargar('/exportaciones/deudas', 'No hay deudas actuales para exportar.')">
+                Descargar Excel
+            </button>
+        </div>
     </div>
 
-    <p>Aquí irán los formularios para exportar por cliente, mes, año o rango de fechas.</p>
+    <div class="panel export-panel">
+        <div class="panel-header">
+            <h2>Pagos de Cliente</h2>
+        </div>
+        <p>Busca un cliente y descarga su histórico de pagos.</p>
+
+        <div class="export-form-row">
+            <input list="clientes-lista" id="clientePagos" class="input-export" placeholder="Buscar cliente por nombre...">
+            <button class="btn-export" onclick="exportarPagosCliente()">Descargar Excel</button>
+        </div>
+    </div>
+
+    <div class="panel export-panel">
+        <div class="panel-header">
+            <h2>Histórico Detallado</h2>
+        </div>
+        <p>Busca un cliente y descarga su histórico completo de cuotas, pagos y deuda.</p>
+
+        <div class="export-form-row">
+            <input list="clientes-lista" id="clienteHistorico" class="input-export" placeholder="Buscar cliente por nombre...">
+            <button class="btn-export" onclick="exportarHistoricoCliente()">Descargar Excel</button>
+        </div>
+    </div>
+
+    <datalist id="clientes-lista">
+        {% for cliente in clientes %}
+            <option value="{{ cliente.nombre }}">
+        {% endfor %}
+    </datalist>
+
 </div>
+
+<script>
+    const clientes = [
+        {% for cliente in clientes %}
+            { id: {{ cliente.id }}, nombre: "{{ cliente.nombre }}" },
+        {% endfor %}
+    ];
+
+    function buscarCliente(nombre) {
+        return clientes.find(c => c.nombre.toLowerCase() === nombre.toLowerCase());
+    }
+
+    function mostrarPopupError(titulo, mensajes) {
+
+        let texto = `
+            ❌ ${titulo}
+
+        `;
+
+        mensajes.forEach(msg => {
+            texto += `• ${msg}\n`;
+        });
+
+        alert(texto);
+    }
+
+    async function comprobarYDescargar(url, mensajeError) {
+
+        try {
+
+            const respuesta = await fetch(url);
+
+            if (!respuesta.ok) {
+
+                mostrarPopupError(
+                    "No se pudo generar la exportación",
+                    [mensajeError]
+                );
+
+                return;
+            }
+
+            window.location.href = url;
+
+        } catch (error) {
+
+            mostrarPopupError(
+                "Error inesperado",
+                ["Ha ocurrido un problema al exportar."]
+            );
+        }
+    }
+
+    function exportarPagosCliente() {
+
+        const nombre = document.getElementById("clientePagos").value.trim();
+
+        if (!nombre) {
+
+            mostrarPopupError(
+                "Revisa los siguientes campos",
+                ["Selecciona un cliente"]
+            );
+
+            return;
+        }
+
+        comprobarYDescargar(
+            `/exportaciones/pagos-cliente?cliente_nombre=${encodeURIComponent(nombre)}`,
+            "No hay pagos registrados para ese cliente."
+        );
+    }
+
+    function exportarHistoricoCliente() {
+
+        const nombre = document.getElementById("clienteHistorico").value.trim();
+
+        const cliente = buscarCliente(nombre);
+
+        if (!cliente) {
+
+            mostrarPopupError(
+                "Revisa los siguientes campos",
+                ["Selecciona un cliente válido"]
+            );
+
+            return;
+        }
+
+        comprobarYDescargar(
+            `/exportaciones/historico-cliente?cliente_id=${cliente.id}`,
+            "No hay histórico para ese cliente."
+        );
+    }
+</script>
+
 {% endblock %}

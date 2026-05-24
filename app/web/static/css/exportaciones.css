@@ -1,0 +1,84 @@
+.exportaciones-page {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.export-top-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.export-card {
+    min-height: 170px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.export-card p {
+    margin-bottom: 22px;
+}
+
+.export-card .btn-export {
+    margin-top: auto;
+}
+
+.export-panel {
+    margin-top: 0;
+}
+
+.export-panel p {
+    color: #6b7280;
+    margin-bottom: 18px;
+}
+
+.export-form-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px;
+    align-items: center;
+}
+
+.input-export {
+    width: 100%;
+    padding: 13px 15px;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    font-size: 14px;
+    outline: none;
+}
+
+.input-export:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.btn-export {
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    color: white;
+    text-decoration: none;
+    border: none;
+    padding: 13px 18px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.btn-export:hover {
+    opacity: 0.92;
+}
+
+@media (max-width: 900px) {
+    .export-top-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .export-form-row {
+        grid-template-columns: 1fr;
+    
+    }
+}
