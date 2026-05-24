@@ -51,7 +51,6 @@ def obtener_estado_riesgo(cliente_id, activo=1):
     else:
         return "moroso_grave"
 
-
 def obtener_detalle_deuda(cliente_id):
     conn = get_connection()
     cursor = conn.cursor()
@@ -80,16 +79,17 @@ def obtener_detalle_deuda(cliente_id):
             detalle.append({
                 "anio": cuota["anio"],
                 "mes": cuota["mes"],
+                "importe_previsto": cuota["importe_previsto"],
+                "total_pagado": cuota["total_pagado"],
                 "pendiente": pendiente
             })
 
     return detalle
 
-
 def formatear_detalle_deuda(detalle):
     partes = []
     for d in detalle:
-        partes.append(f"{d['mes']}/{d['anio']} ({d['pendiente']}€)")
+        partes.append(f"{d['mes']}/{d['anio']} - pendiente: {d['pendiente']} €")
     return ", ".join(partes)
 
 
@@ -434,7 +434,7 @@ def obtener_ingresos_y_deuda_por_anio(anio):
 
     for mes in range(1, 13):
         ingresos.append(float(ingresos_dict.get(mes, 0) or 0))
-        deuda.append(float(deuda_dict.get(mes, 0) or 0))
+        deuda.append(max(float(deuda_dict.get(mes, 0) or 0), 0))
 
     return ingresos, deuda
 

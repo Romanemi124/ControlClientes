@@ -59,12 +59,17 @@ def dashboard(request: Request):
 
 @router.get("/grafica/{anio}")
 def datos_grafica(anio: int):
+    if anio < 2000 or anio > 2100:
+        return JSONResponse(
+            {"error": "Año no válido"},
+            status_code=400
+        )
+
     ingresos, deuda = obtener_ingresos_y_deuda_por_anio(anio)
 
     return JSONResponse({
         "ingresos": ingresos,
         "deuda": deuda
     })
-
 
 

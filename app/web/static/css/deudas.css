@@ -1,0 +1,114 @@
+.deudas-page {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    margin-top: 14px;
+}
+
+.resumen-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.card,
+.filtros-card,
+.tabla-card,
+.detalle-card {
+    background: white;
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    border: 1px solid #eef2f7;
+}
+
+.big-number {
+    font-size: 32px;
+    font-weight: 700;
+    margin-top: 10px;
+    color: #4f46e5;
+}
+
+.filtros-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(180px, 1fr));
+    gap: 16px;
+}
+
+.campo-tool {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.campo-tool label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #4b5563;
+}
+
+.campo-tool input,
+.campo-tool select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #dbe2ea;
+    border-radius: 12px;
+    background: #f9fbfd;
+    font-size: 14px;
+    color: #111827;
+    outline: none;
+}
+
+.deudas-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.deudas-table thead {
+    background: #f3f6fb;
+}
+
+.deudas-table th {
+    text-align: left;
+    padding: 14px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #6b7280;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.deudas-table td {
+    padding: 15px 16px;
+    font-size: 14px;
+    color: #111827;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.deudas-table tbody tr:hover {
+    background: #eef2ff;
+    cursor: pointer;
+}
+
+.detalle-card ul {
+    margin-top: 12px;
+    padding-left: 18px;
+}
+
+.detalle-card li {
+    margin-bottom: 8px;
+}
+
+.cliente-box {
+    background: #f9fbff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+@media (max-width: 900px) {
+    .filtros-grid {
+        grid-template-columns: 1fr;
+    }
+}

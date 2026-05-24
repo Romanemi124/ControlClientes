@@ -1,11 +1,362 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="panel">
-    <div class="panel-header">
-        <h2>Pagos</h2>
-    </div>
 
-    <p>Esta sección servirá para registrar pagos y revisar cuotas.</p>
+<link rel="stylesheet" href="/static/css/pagos.css">
+
+<div class="pagos-page">
+
+    <section class="pago-form-card">
+        <div class="pago-form-header">
+            <h2>Gestión de pagos</h2>
+            <p>Registra, modifica o elimina pagos de clientes.</p>
+        </div>
+
+        <div class="pago-form-grid">
+            <div class="campo">
+                <label>ID</label>
+                <input id="id_visible" placeholder="ID" readonly>
+                <input id="id" type="hidden">
+            </div>
+
+            <div class="campo">
+                <label>Cliente</label>
+                <select id="cliente_id" class="input-estilo" required>
+                    <option value="">Selecciona un cliente</option>
+                    {% for c in clientes %}
+                    <option value="{{ c.id }}">{{ c.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="campo">
+                <label>Fecha de pago</label>
+                <input id="fecha_pago" type="date" required>
+            </div>
+
+            <div class="campo">
+                <label>Importe</label>
+                <input id="importe" type="number" step="0.01" placeholder="0.00" required>
+            </div>
+
+            <div class="campo">
+                <label>Método de pago</label>
+                <select id="metodo_pago" class="input-estilo" required>
+                    <option value="">Selecciona método</option>
+                    <option value="efectivo">Efectivo</option>
+                    <option value="transferencia">Transferencia</option>
+                    <option value="tarjeta">Tarjeta</option>
+                </select>
+            </div>
+
+            <div class="campo">
+                <label>Referencia</label>
+                <input id="referencia" placeholder="Referencia">
+            </div>
+
+            <div class="campo campo-observaciones">
+                <label>Observaciones</label>
+                <textarea id="observaciones" placeholder="Observaciones"></textarea>
+            </div>
+        </div>
+
+        <div class="pago-form-buttons">
+            <button type="button" class="btn btn-primary" onclick="guardarPago()">Guardar</button>
+            <button type="button" class="btn btn-primary" onclick="modificarPago()">Modificar</button>
+            <button type="button" class="btn btn-danger" onclick="eliminarPago()">Eliminar</button>
+            <button type="button" class="btn btn-light" onclick="limpiarFormularioPago()">Limpiar</button>
+        </div>
+    </section>
+
+    <section class="pagos-search-card">
+        <div class="pagos-search-header">
+            <h2>Buscar pagos</h2>
+        </div>
+
+        <div class="pagos-search-grid">
+            <div class="campo-tool">
+                <label for="buscarPago">Cliente</label>
+                <input type="text" id="buscarPago" placeholder="Buscar por cliente...">
+            </div>
+
+            <div class="campo-tool">
+                <label for="filtroFechaPago">Fecha</label>
+                <input type="date" id="filtroFechaPago">
+            </div>
+
+            <div class="campo-tool">
+                <label for="filtroMetodoPago">Método</label>
+                <select id="filtroMetodoPago">
+                    <option value="">Todos</option>
+                    <option value="efectivo">Efectivo</option>
+                    <option value="transferencia">Transferencia</option>
+                    <option value="tarjeta">Tarjeta</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="pago-form-buttons">
+            <button type="button" class="btn btn-primary" onclick="buscarPagosTabla()">Buscar</button>
+            <button type="button" class="btn btn-light" onclick="limpiarFiltrosPagos()">Limpiar filtros</button>
+        </div>
+    </section>
+
+    <section class="pagos-table-card">
+        <div class="pagos-table-wrapper">
+            <table class="pagos-table">
+                <thead>
+                    <tr>
+                        <!--<th>ID</th>-->
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>Referencia</th>
+                        <th>Importe</th>
+                        <th>Método</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-pagos-body">
+                    <!-- Vacía al inicio -->
+                </tbody>
+            </table>
+        </div>
+    </section>
+
 </div>
+
+<script>
+function seleccionarPago(row) {
+    document.querySelectorAll("#tabla-pagos-body tr").forEach(tr => tr.classList.remove("selected"));
+    row.classList.add("selected");
+
+    document.getElementById("id").value = row.dataset.id;
+    document.getElementById("id_visible").value = row.dataset.id;
+    document.getElementById("cliente_id").value = row.dataset.cliente_id;
+    document.getElementById("fecha_pago").value = row.dataset.fecha_pago || "";
+    document.getElementById("importe").value = row.dataset.importe_pagado || "";
+    document.getElementById("metodo_pago").value = row.dataset.metodo_pago || "";
+    document.getElementById("referencia").value = row.dataset.referencia || "";
+    document.getElementById("observaciones").value = row.dataset.observaciones || "";
+}
+
+function limpiarFormularioPago() {
+    document.getElementById("id").value = "";
+    document.getElementById("id_visible").value = "";
+    document.getElementById("cliente_id").value = "";
+    document.getElementById("fecha_pago").value = "";
+    document.getElementById("importe").value = "";
+    document.getElementById("metodo_pago").value = "";
+    document.getElementById("referencia").value = "";
+    document.getElementById("observaciones").value = "";
+    document.querySelectorAll("#tabla-pagos-body tr").forEach(tr => tr.classList.remove("selected"));
+}
+
+function getPayloadPago() {
+    return {
+        id: document.getElementById("id").value,
+        cliente_id: document.getElementById("cliente_id").value,
+        fecha_pago: document.getElementById("fecha_pago").value.trim(),
+        importe: document.getElementById("importe").value.trim(),
+        metodo_pago: document.getElementById("metodo_pago").value,
+        referencia: document.getElementById("referencia").value.trim(),
+        observaciones: document.getElementById("observaciones").value.trim()
+    };
+}
+
+function validarPago(p) {
+    let errores = [];
+
+    if (!p.cliente_id) errores.push("Cliente");
+    if (!p.fecha_pago) errores.push("Fecha de pago");
+    if (!p.importe) errores.push("Importe");
+    if (!p.metodo_pago) errores.push("Método de pago");
+
+    if (p.importe && isNaN(parseFloat(p.importe))) {
+        errores.push("Importe no válido");
+    }
+
+    if (errores.length > 0) {
+        let mensaje = "❌ Revisa los siguientes campos:\n\n";
+        errores.forEach(campo => {
+            mensaje += "• " + campo + "\n";
+        });
+        mensaje += "\nCorrígelo antes de continuar.";
+        alert(mensaje);
+        return false;
+    }
+
+    return true;
+}
+
+function crearFilaPago(pago) {
+    const tr = document.createElement("tr");
+
+    tr.dataset.id = pago.id;
+    tr.dataset.cliente_id = pago.cliente_id;
+    tr.dataset.cliente_nombre = pago.cliente_nombre || "";
+    tr.dataset.fecha_pago = pago.fecha_pago || "";
+    tr.dataset.importe_pagado = pago.importe_pagado || "";
+    tr.dataset.metodo_pago = pago.metodo_pago || "";
+    tr.dataset.referencia = pago.referencia || "";
+    tr.dataset.observaciones = pago.observaciones || "";
+
+    tr.onclick = function () {
+        seleccionarPago(tr);
+    };
+
+    tr.innerHTML = `
+        
+        <td>${pago.fecha_pago || ""}</td>
+        <td>${pago.cliente_nombre || ""}</td>
+        <td>${pago.referencia || ""} €</td>
+        <td>${pago.importe_pagado || ""}</td>
+        <td>${pago.metodo_pago || ""}</td>
+    `;
+
+    return tr;
+}
+
+function pintarTablaPagos(pagos) {
+    const tbody = document.getElementById("tabla-pagos-body");
+    tbody.innerHTML = "";
+
+    pagos.forEach(pago => {
+        tbody.appendChild(crearFilaPago(pago));
+    });
+}
+
+async function buscarPagosTabla() {
+    const payload = {
+        cliente_nombre: document.getElementById("buscarPago").value.trim(),
+        fecha_pago: document.getElementById("filtroFechaPago").value.trim(),
+        metodo_pago: document.getElementById("filtroMetodoPago").value
+    };
+
+    try {
+        const response = await fetch("/pagos/buscar", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+            alert(data.error || "Error al buscar");
+            return;
+        }
+
+        pintarTablaPagos(data.pagos);
+    } catch (error) {
+        console.error(error);
+        alert("Error de conexión");
+    }
+}
+
+function limpiarFiltrosPagos() {
+    document.getElementById("buscarPago").value = "";
+    document.getElementById("filtroFechaPago").value = "";
+    document.getElementById("filtroMetodoPago").value = "";
+    document.getElementById("tabla-pagos-body").innerHTML = "";
+}
+
+async function enviarPago(url, payload, mensaje) {
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+            alert(data.error || "Error");
+            return false;
+        }
+
+        alert(mensaje);
+        await buscarPagosTabla();
+        return true;
+    } catch (error) {
+        console.error(error);
+        alert("Error de conexión");
+        return false;
+    }
+}
+
+async function guardarPago() {
+    const payload = getPayloadPago();
+
+    if (payload.id) {
+        alert("Para un pago existente usa el botón Modificar");
+        return;
+    }
+
+    if (!validarPago(payload)) return;
+
+    await enviarPago("/pagos/guardar", payload, "Pago creado correctamente");
+}
+
+async function modificarPago() {
+    const payload = getPayloadPago();
+
+    if (!payload.id) {
+        alert("Selecciona un pago para modificar");
+        return;
+    }
+
+    if (!validarPago(payload)) return;
+
+    await enviarPago("/pagos/guardar", payload, "Pago modificado correctamente");
+}
+
+async function eliminarPago() {
+    const id = document.getElementById("id").value;
+
+    if (!id) {
+        alert("Selecciona un pago para eliminar");
+        return;
+    }
+
+    try {
+        const response = await fetch("/pagos/eliminar", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ id })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+            alert(data.error || "Error al eliminar");
+            return;
+        }
+
+        alert("Pago eliminado correctamente");
+        limpiarFormularioPago();
+        await buscarPagosTabla();
+    } catch (error) {
+        console.error(error);
+        alert("Error de conexión");
+    }
+}
+
+document.getElementById("buscarPago").addEventListener("keyup", function () {
+    if (this.value.trim() !== "") {
+        buscarPagosTabla();
+    } else if (
+        !document.getElementById("filtroFechaPago").value &&
+        !document.getElementById("filtroMetodoPago").value
+    ) {
+        document.getElementById("tabla-pagos-body").innerHTML = "";
+    }
+});
+</script>
+
 {% endblock %}

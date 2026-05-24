@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS clientes (
     fecha_alta TEXT,
     fecha_baja TEXT,
     activo INTEGER DEFAULT 1,
-    observaciones TEXT
+    observaciones TEXT,
 );
 
 CREATE TABLE IF NOT EXISTS cuotas (
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS cuotas (
     estado_cuota TEXT,
     fecha_vencimiento TEXT,
     observaciones TEXT,
-    FOREIGN KEY(cliente_id) REFERENCES clientes(id)
+    FOREIGN KEY(cliente_id) REFERENCES clientes(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS pagos (
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS pagos (
     metodo_pago TEXT,
     referencia TEXT,
     observaciones TEXT,
-    FOREIGN KEY(cliente_id) REFERENCES clientes(id)
+    FOREIGN KEY(cliente_id) REFERENCES clientes(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS aplicacion_pagos (
@@ -39,6 +39,6 @@ CREATE TABLE IF NOT EXISTS aplicacion_pagos (
     pago_id INTEGER,
     cuota_id INTEGER,
     importe_aplicado REAL,
-    FOREIGN KEY(pago_id) REFERENCES pagos(id),
-    FOREIGN KEY(cuota_id) REFERENCES cuotas(id)
+    FOREIGN KEY(pago_id) REFERENCES pagos(id) ON DELETE CASCADE,
+    FOREIGN KEY(cuota_id) REFERENCES cuotas(id) ON DELETE CASCADE
 );

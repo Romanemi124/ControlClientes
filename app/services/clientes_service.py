@@ -1,18 +1,6 @@
 from app.database.db import get_connection
 
 
-def crear_cliente(nombre, telefono="", email="", direccion="", fecha_alta="", observaciones=""):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        INSERT INTO clientes (nombre, telefono, email, direccion, fecha_alta, observaciones)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (nombre, telefono, email, direccion, fecha_alta, observaciones))
-
-    conn.commit()
-    conn.close()
-
 def obtener_clientes():
     conn = get_connection()
     cursor = conn.cursor()
@@ -45,26 +33,54 @@ def obtener_cliente_por_id(cliente_id):
     cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM clientes WHERE id = ?", (cliente_id,))
-    cliente = cursor.fetchone()
+    row = cursor.fetchone()
 
     conn.close()
-    return cliente
+
+    if row is None:
+        return None
+
+    return dict(row)
 
 
-def crear_cliente_web(nombre, prefijo="+34", telefono="", email="", direccion="", fecha_alta="", fecha_baja="", activo=1, observaciones=""):
+def crear_cliente_web(
+    nombre,
+    prefijo="+34",
+    telefono="",
+    email="",
+    direccion="",
+    fecha_alta="",
+    fecha_baja="",
+    activo=1,
+    observaciones=""
+):
     conn = get_connection()
     cursor = conn.cursor()
 
-    if not fecha_alta:
-        cursor.execute("""
-            INSERT INTO clientes (nombre, prefijo, telefono, email, direccion, fecha_alta, fecha_baja, activo, observaciones)
-            VALUES (?, ?, ?, ?, ?, DATE('now'), ?, ?, ?)
-        """, (nombre, prefijo, telefono, email, direccion, fecha_baja or None, activo, observaciones))
-    else:
-        cursor.execute("""
-            INSERT INTO clientes (nombre, prefijo, telefono, email, direccion, fecha_alta, fecha_baja, activo, observaciones)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (nombre, prefijo, telefono, email, direccion, fecha_alta, fecha_baja or None, activo, observaciones))
+    cursor.execute("""
+        INSERT INTO clientes (
+            nombre,
+            prefijo,
+            telefono,
+            email,
+            direccion,
+            fecha_alta,
+            fecha_baja,
+            activo,
+            observaciones
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        nombre,
+        prefijo or "+34",
+        telefono,
+        email,
+        direccion,
+        fecha_alta or None,
+        fecha_baja or None,
+        activo,
+        observaciones
+    ))
 
     conn.commit()
     nuevo_id = cursor.lastrowid
@@ -73,7 +89,18 @@ def crear_cliente_web(nombre, prefijo="+34", telefono="", email="", direccion=""
     return nuevo_id
 
 
-def actualizar_cliente(cliente_id, nombre, prefijo="+34", telefono="", email="", direccion="", fecha_alta="", fecha_baja="", activo=1, observaciones=""):
+def actualizar_cliente(
+    cliente_id,
+    nombre,
+    prefijo="+34",
+    telefono="",
+    email="",
+    direccion="",
+    fecha_alta="",
+    fecha_baja="",
+    activo=1,
+    observaciones=""
+):
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -89,37 +116,18 @@ def actualizar_cliente(cliente_id, nombre, prefijo="+34", telefono="", email="",
             activo = ?,
             observaciones = ?
         WHERE id = ?
-    """, (nombre, prefijo, telefono, email, direccion, fecha_alta or None, fecha_baja or None, activo, observaciones, cliente_id))
-
-    conn.commit()
-    conn.close()
-
-
-def marcar_cliente_como_baja(cliente_id, fecha_baja):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        UPDATE clientes
-        SET activo = 0,
-            fecha_baja = ?
-        WHERE id = ?
-    """, (fecha_baja, cliente_id))
-
-    conn.commit()
-    conn.close()
-
-
-def reactivar_cliente(cliente_id):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        UPDATE clientes
-        SET activo = 1,
-            fecha_baja = NULL
-        WHERE id = ?
-    """, (cliente_id,))
+    """, (
+        nombre,
+        prefijo or "+34",
+        telefono,
+        email,
+        direccion,
+        fecha_alta or None,
+        fecha_baja or None,
+        activo,
+        observaciones,
+        cliente_id
+    ))
 
     conn.commit()
     conn.close()
@@ -141,5 +149,3 @@ def get_clientes_mayor_deuda():
             reverse=True
         )
     ]
-
-

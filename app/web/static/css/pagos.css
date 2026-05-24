@@ -1,0 +1,180 @@
+.pagos-page {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    margin-top: 14px;
+}
+
+.pago-form-card,
+.pagos-search-card,
+.pagos-table-card {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    border: 1px solid #eef2f7;
+}
+
+.pago-form-header h2,
+.pagos-search-header h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 6px;
+}
+
+.pago-form-header p {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 18px;
+}
+
+.pago-form-grid,
+.pagos-search-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(180px, 1fr));
+    gap: 16px;
+}
+
+.campo,
+.campo-tool {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.campo label,
+.campo-tool label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #4b5563;
+}
+
+.campo input,
+.campo select,
+.campo textarea,
+.campo-tool input,
+.campo-tool select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #dbe2ea;
+    border-radius: 12px;
+    background: #f9fbfd;
+    font-size: 14px;
+    color: #111827;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.campo input:focus,
+.campo select:focus,
+.campo textarea:focus,
+.campo-tool input:focus,
+.campo-tool select:focus {
+    border-color: #6366f1;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.campo textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.campo-observaciones {
+    grid-column: span 2;
+}
+
+.pago-form-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    border: none;
+    border-radius: 12px;
+    padding: 11px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn-primary {
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    color: white;
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-light {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+.pagos-table-wrapper {
+    overflow-x: auto;
+}
+
+.pagos-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 860px;
+}
+
+.pagos-table thead {
+    background: #f3f6fb;
+}
+
+.pagos-table th {
+    text-align: left;
+    padding: 14px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #6b7280;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.pagos-table td {
+    padding: 15px 16px;
+    font-size: 14px;
+    color: #111827;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.pagos-table tbody tr {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.pagos-table tbody tr:hover {
+    background: #eef2ff;
+}
+
+.pagos-table tbody tr.selected {
+    background: #e0e7ff;
+}
+
+@media (max-width: 900px) {
+    .pago-form-grid,
+    .pagos-search-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .campo-observaciones {
+        grid-column: span 1;
+    }
+
+    .pago-form-buttons {
+        flex-direction: column;
+    }
+}

@@ -63,7 +63,7 @@
         <div class="campo">
             <label>Activo</label>
             <div class="select-wrapper">
-                <select id="activo" class="input-estilo">
+                <select id="activo" class="input-estilo" onchange="actualizarEstadoCliente()">
                     <option value="1">Activo</option>
                     <option value="0">Inactivo</option>
                 </select>
@@ -323,6 +323,22 @@ function actualizarFilaTabla(cliente) {
     filasOriginales = Array.from(document.querySelectorAll("#tabla-body tr"));
     aplicarFiltrosYOrden();
     seleccionarCliente(nuevaFila);
+}
+
+function actualizarEstadoCliente() {
+    const activo = document.getElementById("activo").value;
+    const fechaBaja = document.getElementById("fecha_baja");
+
+    if (activo === "0") {
+
+        if (!fechaBaja.value) {
+            const hoy = new Date().toISOString().split("T")[0];
+            fechaBaja.value = hoy;
+        }
+
+    } else {
+        fechaBaja.value = "";
+    }
 }
 
 async function enviar(url, payload, mensaje) {

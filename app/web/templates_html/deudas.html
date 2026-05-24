@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% block content %}
+
+<link rel="stylesheet" href="/static/css/deudas.css">
+
+<div class="deudas-page">
+
+    <div class="resumen-grid">
+        <div class="card">
+            <h3>Clientes con deuda</h3>
+            <p class="big-number">{{ resumen.clientes_con_deuda }}</p>
+        </div>
+
+        <div class="card">
+            <h3>Deuda total</h3>
+            <p class="big-number">{{ resumen.deuda_total }} €</p>
+        </div>
+
+        <div class="card">
+            <h3>Baja con deuda</h3>
+            <p class="big-number">{{ resumen.clientes_baja_con_deuda }}</p>
+        </div>
+
+        <div class="card">
+            <h3>Cuotas pendientes</h3>
+            <p class="big-number">{{ resumen.cuotas_pendientes }}</p>
+        </div>
+    </div>
+
+    <div class="detalle-card">
+        <h3>Detalle de deuda</h3>
+        <div id="cliente-info"></div>
+        <ul id="detalle-lista"></ul>
+    </div>
+
+    <div class="filtros-card">
+        <div class="filtros-grid">
+            <div class="campo-tool">
+                <label for="buscarNombre">Cliente</label>
+                <input id="buscarNombre" placeholder="Buscar cliente...">
+            </div>
+
+            <div class="campo-tool">
+                <label for="filtroEstado">Estado</label>
+                <select id="filtroEstado">
+                    <option value="">Todos</option>
+                    <option value="con_deuda">Con deuda</option>
+                    <option value="baja">Baja con deuda</option>
+                </select>
+            </div>
+
+            <div class="campo-tool">
+                <label for="filtroRiesgo">Riesgo</label>
+                <select id="filtroRiesgo">
+                    <option value="">Todos</option>
+                    <option value="al_dia">Al día</option>
+                    <option value="retraso_leve">Retraso leve</option>
+                    <option value="en_riesgo">En riesgo</option>
+                    <option value="moroso_grave">Moroso grave</option>
+                    <option value="baja">Baja</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="tabla-card">
+        <table class="deudas-table">
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Activo</th>
+                    <th>Deuda total</th>
+                    <th>Cuotas pendientes</th>
+                    <th>Riesgo</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-deudas-body"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+async function buscarDeudas() {
+    const payload = {
+        nombre: document.getElementById("buscarNombre").value,
+        estado: document.getElementById("filtroEstado").value,
+        riesgo: document.getElementById("filtroRiesgo").value
+    };
+
+    try {
+        const res = await fetch("/deudas/buscar", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.ok) {
+            alert(data.error || "Error al buscar deudas");
+            return;
+        }
+
+        pintarTabla(data.deudas || []);
+    } catch (error) {
+        console.error(error);
+        alert("Error al buscar deudas");
+    }
+}
+
+function pintarTabla(deudas) {
+    const tbody = document.getElementById("tabla-deudas-body");
+    tbody.innerHTML = "";
+
+    deudas.forEach(cliente => {
+        const tr = document.createElement("tr");
+
+        tr.onclick = () => cargarDetalle(cliente.id);
+
+        tr.innerHTML = `
+            <td>${cliente.nombre}</td>
+            <td>${cliente.activo == 1 ? "Sí" : "No"}</td>
+            <td>${cliente.deuda_total} €</td>
+            <td>${cliente.cuotas_pendientes}</td>
+            <td>${formatearRiesgo(cliente.estado_riesgo)}</td>
+        `;
+
+        tbody.appendChild(tr);
+    });
+}
+
+function formatearRiesgo(riesgo) {
+    switch (riesgo) {
+        case "al_dia":
+            return "Al día";
+        case "retraso_leve":
+            return "Retraso leve";
+        case "en_riesgo":
+            return "En riesgo";
+        case "moroso_grave":
+            return "Moroso grave";
+        case "baja":
+            return "Cliente de baja";
+        default:
+            return riesgo;
+    }
+}
+
+function formatearMes(mes) {
+    const meses = {
+        1: "Enero",
+        2: "Febrero",
+        3: "Marzo",
+        4: "Abril",
+        5: "Mayo",
+        6: "Junio",
+        7: "Julio",
+        8: "Agosto",
+        9: "Septiembre",
+        10: "Octubre",
+        11: "Noviembre",
+        12: "Diciembre"
+    };
+
+    return meses[mes] || mes;
+}
+
+async function cargarDetalle(cliente_id) {
+    try {
+        const res = await fetch("/deudas/detalle", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ cliente_id })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.ok) {
+            alert("Error al cargar detalle");
+            return;
+        }
+
+        const cliente = data.cliente;
+
+        // Info cliente
+        const info = document.getElementById("cliente-info");
+        info.innerHTML = `
+            <div class="cliente-box">
+                <strong>${cliente.nombre}</strong><br>
+                📞 ${cliente.telefono || "-"}<br>
+                ✉️ ${cliente.email || "-"}<br>
+                Estado: ${cliente.activo ? "Activo" : "Baja"}<br>
+                Riesgo: ${formatearRiesgo(cliente.estado_riesgo)}<br>
+                Deuda total: ${cliente.deuda_total} €<br>
+                Cuotas pendientes: ${cliente.cuotas_pendientes}
+            </div>
+        `;
+
+        // Detalle cuotas
+        const lista = document.getElementById("detalle-lista");
+        lista.innerHTML = "";
+
+        (data.detalle || []).forEach(d => {
+            const li = document.createElement("li");
+            li.innerHTML = `
+                <strong>${formatearMes(d.mes)} ${d.anio}</strong><br>
+                Previsto: ${d.importe_previsto} € | Pagado: ${d.total_pagado} € | Pendiente: ${d.pendiente} €
+            `;
+            lista.appendChild(li);
+        });
+
+    } catch (error) {
+        console.error(error);
+        alert("Error al cargar detalle");
+    }
+}
+
+document.getElementById("buscarNombre").addEventListener("keyup", buscarDeudas);
+document.getElementById("filtroEstado").addEventListener("change", buscarDeudas);
+document.getElementById("filtroRiesgo").addEventListener("change", buscarDeudas);
+</script>
+
+{% endblock %}
