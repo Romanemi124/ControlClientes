@@ -61,12 +61,6 @@ async def guardar_cliente(request: Request):
     if not telefono:
         errores.append("teléfono")
 
-    if not email:
-        errores.append("email")
-
-    if not direccion:
-        errores.append("dirección")
-
     if not fecha_alta:
         errores.append("fecha de alta")
 
@@ -85,7 +79,7 @@ async def guardar_cliente(request: Request):
 
     patron_email = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
 
-    if not re.match(patron_email, email):
+    if email and not re.match(patron_email, email):
         return JSONResponse(
             {
                 "ok": False,

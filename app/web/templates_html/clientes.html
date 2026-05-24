@@ -42,12 +42,12 @@
 
         <div class="campo">
             <label>Email</label>
-            <input id="email" placeholder="Email" required>
+            <input id="email" placeholder="Email">
         </div>
 
         <div class="campo">
             <label>Dirección</label>
-            <input id="direccion" placeholder="Dirección" required>
+            <input id="direccion" placeholder="Dirección">
         </div>
 
         <div class="campo">
@@ -240,8 +240,6 @@ function validarCampos(p) {
 
     if (!p.nombre) errores.push("Nombre");
     if (!p.telefono) errores.push("Teléfono");
-    if (!p.email) errores.push("Email");
-    if (!p.direccion) errores.push("Dirección");
     if (!p.fecha_alta) errores.push("Fecha de alta");
 
     if (p.email && !validarEmail(p.email)) {
