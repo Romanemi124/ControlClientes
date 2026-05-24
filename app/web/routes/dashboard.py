@@ -72,4 +72,3 @@ def datos_grafica(anio: int):
         "deuda": deuda
     })
 
-
