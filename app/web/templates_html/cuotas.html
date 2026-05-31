@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<link rel="stylesheet" href="/static/css/clientes.css">
+<link rel="stylesheet" href="/static/css/cuotas.css">
+
+<div class="cuotas-page">
+
+    <section class="clientes-search-card">
+        <div class="clientes-search-header">
+            <h2>Seleccionar cliente</h2>
+        </div>
+
+        <div class="clientes-search-box">
+            <input type="text" id="buscarClienteCuota" placeholder="Buscar cliente por nombre...">
+        </div>
+    </section>
+
+    <section class="clientes-table-card">
+        <div class="clientes-table-wrapper">
+            <table class="clientes-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Teléfono</th>
+                        <th>Email</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-clientes-cuota">
+                    {% for c in clientes %}
+                    <tr onclick="seleccionarClienteCuota(this)"
+                        data-id="{{ c.id }}"
+                        data-nombre="{{ c.nombre }}"
+                        data-telefono="{{ c.telefono }}"
+                        data-email="{{ c.email }}">
+                        <td>{{ c.id }}</td>
+                        <td>{{ c.nombre }}</td>
+                        <td>{{ c.telefono }}</td>
+                        <td>{{ c.email }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="cuotas-card">
+        <div class="cuotas-header">
+            <h2>Cuotas del cliente seleccionado</h2>
+            <p>Define o modifica las cuotas mensuales del año seleccionado.</p>
+        </div>
+
+        <div class="cuotas-info-grid">
+            <div class="campo">
+                <label>ID cliente</label>
+                <input id="cliente_id" readonly>
+            </div>
+
+            <div class="campo">
+                <label>Cliente</label>
+                <input id="cliente_nombre" readonly>
+            </div>
+
+            <div class="campo">
+                <label>Año</label>
+                <input id="anio" type="number" value="{{ anio_actual }}">
+            </div>
+        </div>
+
+        <div class="cuota-simple-box">
+            <div class="campo">
+                <label>Cuota simple para todo el año</label>
+                <input id="cuota_simple" type="number" step="0.01" placeholder="Importe mensual">
+            </div>
+
+            <button type="button" class="btn btn-light" onclick="aplicarCuotaSimple()">
+                Aplicar a todos los meses
+            </button>
+        </div>
+
+        <div class="cuotas-meses-grid" id="cuotasMeses">
+            {% set meses = [
+                (1, "Enero"), (2, "Febrero"), (3, "Marzo"), (4, "Abril"),
+                (5, "Mayo"), (6, "Junio"), (7, "Julio"), (8, "Agosto"),
+                (9, "Septiembre"), (10, "Octubre"), (11, "Noviembre"), (12, "Diciembre")
+            ] %}
+
+            {% for numero, nombre in meses %}
+            <div class="campo cuota-mes-card">
+                <label>{{ nombre }}</label>
+
+                <input 
+                    type="number" 
+                    step="0.01" 
+                    class="input-cuota" 
+                    data-mes="{{ numero }}" 
+                    placeholder="Importe"
+                >
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="cuotas-buttons">
+            <button type="button" class="btn btn-primary" onclick="guardarCuotasCliente()">
+                Guardar cuotas
+            </button>
+
+            <button type="button" class="btn btn-light" onclick="limpiarCuotas()">
+                Limpiar
+            </button>
+        </div>
+    </section>
+
+</div>
+
+<script>
+let filasClientesCuotaOriginales = [];
+
+document.addEventListener("DOMContentLoaded", function () {
+    filasClientesCuotaOriginales = Array.from(document.querySelectorAll("#tabla-clientes-cuota tr"));
+
+    document.getElementById("buscarClienteCuota").addEventListener("keyup", aplicarFiltroClientesCuota);
+    document.getElementById("anio").addEventListener("change", cargarCuotasCliente);
+
+    aplicarFiltroClientesCuota();
+});
+
+function aplicarFiltroClientesCuota() {
+    const filtroTexto = document.getElementById("buscarClienteCuota").value.toLowerCase().trim();
+    const tbody = document.getElementById("tabla-clientes-cuota");
+
+    const filasFiltradas = filasClientesCuotaOriginales.filter(fila => {
+        const nombre = (fila.dataset.nombre || "").toLowerCase();
+        return nombre.includes(filtroTexto);
+    });
+
+    tbody.innerHTML = "";
+
+    if (!filtroTexto) {
+        return;
+    }
+
+    filasFiltradas.forEach(fila => tbody.appendChild(fila));
+}
+
+function seleccionarClienteCuota(row) {
+    document.getElementById("cliente_id").value = row.dataset.id;
+    document.getElementById("cliente_nombre").value = row.dataset.nombre;
+    document.getElementById("buscarClienteCuota").value = row.dataset.nombre;
+
+    const tbody = document.getElementById("tabla-clientes-cuota");
+    const nuevaFila = row.cloneNode(true);
+
+    nuevaFila.onclick = function () {
+        seleccionarClienteCuota(nuevaFila);
+    };
+
+    tbody.innerHTML = "";
+    tbody.appendChild(nuevaFila);
+
+    cargarCuotasCliente();
+}
+
+async function cargarCuotasCliente() {
+    const clienteId = document.getElementById("cliente_id").value;
+    const anio = document.getElementById("anio").value;
+
+    if (!clienteId) return;
+
+    const response = await fetch("/cuotas/cliente", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            cliente_id: clienteId,
+            anio: anio
+        })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+        alert(data.error || "Error al cargar cuotas");
+        return;
+    }
+
+    document.querySelectorAll(".input-cuota").forEach(input => {
+        input.value = "";
+    });
+
+    data.cuotas.forEach(cuota => {
+        const input = document.querySelector(`.input-cuota[data-mes="${cuota.mes}"]`);
+        if (input) {
+            input.value = cuota.importe_previsto || "";
+        }
+    });
+}
+
+async function guardarCuotasCliente() {
+    const clienteId = document.getElementById("cliente_id").value;
+    const anio = document.getElementById("anio").value;
+
+    if (!clienteId) {
+        alert("Selecciona un cliente antes de guardar cuotas");
+        return;
+    }
+
+    const cuotas = [];
+
+    document.querySelectorAll(".input-cuota").forEach(input => {
+
+        cuotas.push({
+            mes: input.dataset.mes,
+            importe_previsto: input.value
+        });
+    });
+
+    const response = await fetch("/cuotas/guardar", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            cliente_id: clienteId,
+            anio: anio,
+            cuotas: cuotas
+        })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+        alert(data.error || "Error al guardar cuotas");
+        return;
+    }
+
+    alert("Cuotas guardadas correctamente");
+    await cargarCuotasCliente();
+}
+
+function limpiarCuotas() {
+    document.querySelectorAll(".input-cuota").forEach(input => {
+        input.value = "";
+    });
+}
+
+function aplicarCuotaSimple() {
+    const importe = document.getElementById("cuota_simple").value;
+
+    if (!importe) {
+        alert("Introduce un importe para aplicar a todos los meses");
+        return;
+    }
+
+    document.querySelectorAll(".input-cuota").forEach(input => {
+        input.value = importe;
+    });
+}
+</script>
+
+{% endblock %}

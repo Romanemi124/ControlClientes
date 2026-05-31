@@ -1,0 +1,84 @@
+.cuotas-page {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    margin-top: 14px;
+}
+
+.cuotas-card {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    border: 1px solid #eef2f7;
+}
+
+.cuotas-header h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 6px;
+}
+
+.cuotas-header p {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 18px;
+}
+
+.cuotas-info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.cuotas-meses-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(160px, 1fr));
+    gap: 16px;
+}
+
+.cuotas-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+}
+
+.cuota-simple-box {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px;
+    align-items: end;
+    margin-bottom: 22px;
+}
+
+.cuota-mes-card {
+    background: #f9fbfd;
+    border: 1px solid #eef2f7;
+    border-radius: 14px;
+    padding: 14px;
+}
+
+@media (max-width: 1000px) {
+    .cuotas-info-grid,
+    .cuotas-meses-grid {
+        grid-template-columns: repeat(2, minmax(160px, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .cuotas-info-grid,
+    .cuotas-meses-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .cuotas-buttons {
+        flex-direction: column;
+    }
+
+    .cuota-simple-box {
+        grid-template-columns: 1fr;
+    }
+}

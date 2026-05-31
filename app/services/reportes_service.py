@@ -92,34 +92,98 @@ def formatear_detalle_deuda(detalle):
         partes.append(f"{d['mes']}/{d['anio']} - pendiente: {d['pendiente']} €")
     return ", ".join(partes)
 
-
 def obtener_deuda_todos_clientes():
-    clientes = obtener_clientes()
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            c.id,
+            c.nombre,
+            c.telefono,
+            c.email,
+            c.direccion,
+            c.fecha_alta,
+            c.fecha_baja,
+            c.activo,
+            cu.anio,
+            cu.mes,
+            cu.importe_previsto,
+            COALESCE(SUM(ap.importe_aplicado), 0) AS total_pagado
+        FROM clientes c
+        LEFT JOIN cuotas cu ON c.id = cu.cliente_id
+        LEFT JOIN aplicacion_pagos ap ON cu.id = ap.cuota_id
+        GROUP BY
+            c.id,
+            cu.id
+        ORDER BY c.id ASC, cu.anio ASC, cu.mes ASC
+    """)
+
+    filas = cursor.fetchall()
+    conn.close()
+
+    clientes_dict = {}
+
+    for fila in filas:
+        cliente_id = fila["id"]
+
+        if cliente_id not in clientes_dict:
+            clientes_dict[cliente_id] = {
+                "id": fila["id"],
+                "nombre": fila["nombre"],
+                "telefono": fila["telefono"],
+                "email": fila["email"],
+                "direccion": fila["direccion"],
+                "fecha_alta": fila["fecha_alta"],
+                "fecha_baja": fila["fecha_baja"],
+                "activo": fila["activo"],
+                "deuda_total": 0,
+                "cuotas_pendientes": 0,
+                "detalle_deuda": [],
+                "detalle_deuda_texto": "",
+                "estado_riesgo": "al_dia",
+            }
+
+        if fila["anio"] is None or fila["mes"] is None:
+            continue
+
+        importe_previsto = float(fila["importe_previsto"] or 0)
+        total_pagado = float(fila["total_pagado"] or 0)
+        pendiente = importe_previsto - total_pagado
+
+        if pendiente > 0:
+            clientes_dict[cliente_id]["deuda_total"] += pendiente
+            clientes_dict[cliente_id]["cuotas_pendientes"] += 1
+            clientes_dict[cliente_id]["detalle_deuda"].append({
+                "anio": fila["anio"],
+                "mes": fila["mes"],
+                "importe_previsto": importe_previsto,
+                "total_pagado": total_pagado,
+                "pendiente": pendiente,
+            })
+
     resultado = []
 
-    for cliente in clientes:
-        deuda_total, cuotas_pendientes = calcular_deuda_cliente(cliente["id"])
-        estado_riesgo = obtener_estado_riesgo(cliente["id"], cliente["activo"])
-        detalle = obtener_detalle_deuda(cliente["id"])
+    for cliente in clientes_dict.values():
+        cuotas_pendientes = cliente["cuotas_pendientes"]
 
-        resultado.append({
-            "id": cliente["id"],
-            "nombre": cliente["nombre"],
-            "telefono": cliente["telefono"],
-            "email": cliente["email"],
-            "direccion": cliente["direccion"],
-            "fecha_alta": cliente["fecha_alta"],
-            "fecha_baja": cliente["fecha_baja"],
-            "activo": cliente["activo"],
-            "deuda_total": deuda_total,
-            "cuotas_pendientes": cuotas_pendientes,
-            "estado_riesgo": estado_riesgo,
-            "detalle_deuda": detalle,
-            "detalle_deuda_texto": formatear_detalle_deuda(detalle)
-        })
+        if cliente["activo"] == 0:
+            estado = "baja"
+        elif cuotas_pendientes == 0:
+            estado = "al_dia"
+        elif cuotas_pendientes == 1:
+            estado = "retraso_leve"
+        elif cuotas_pendientes <= 3:
+            estado = "en_riesgo"
+        else:
+            estado = "moroso_grave"
+
+        cliente["estado_riesgo"] = estado
+        cliente["detalle_deuda_texto"] = formatear_detalle_deuda(cliente["detalle_deuda"])
+
+        resultado.append(cliente)
 
     return resultado
-
 
 def obtener_clientes_con_deuda():
     todos = obtener_deuda_todos_clientes()
