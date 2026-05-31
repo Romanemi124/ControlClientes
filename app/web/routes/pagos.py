@@ -8,6 +8,8 @@ from app.services.pagos_service import (
     actualizar_pago,
     eliminar_pago,
     buscar_pagos,
+    obtener_resumen_cuotas_cliente,
+    obtener_pagos_cliente,
 )
 
 router = APIRouter()
@@ -115,3 +117,33 @@ async def buscar_pagos_route(request: Request):
     )
 
     return JSONResponse({"ok": True, "pagos": pagos})
+
+from datetime import datetime
+
+@router.post("/pagos/resumen-cliente")
+async def resumen_cliente(request: Request):
+    data = await request.json()
+
+    cliente_id = data.get("cliente_id")
+    anio = data.get("anio", datetime.now().year)
+
+    if not cliente_id:
+        return JSONResponse(
+            {"ok": False, "error": "No hay cliente seleccionado"},
+            status_code=400
+        )
+
+    resumen = obtener_resumen_cuotas_cliente(
+        int(cliente_id),
+        int(anio)
+    )
+
+    pagos = obtener_pagos_cliente(
+        int(cliente_id)
+    )
+
+    return JSONResponse({
+        "ok": True,
+        "resumen": resumen,
+        "pagos": pagos
+    })

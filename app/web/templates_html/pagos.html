@@ -2,9 +2,49 @@
 
 {% block content %}
 
+<link rel="stylesheet" href="/static/css/clientes.css">
 <link rel="stylesheet" href="/static/css/pagos.css">
 
 <div class="pagos-page">
+
+    <section class="clientes-search-card">
+        <div class="clientes-search-header">
+            <h2>Seleccionar cliente</h2>
+        </div>
+
+        <div class="clientes-search-box">
+            <input type="text" id="buscarClientePago" placeholder="Buscar cliente por nombre...">
+        </div>
+    </section>
+
+    <section class="clientes-table-card">
+        <div class="clientes-table-wrapper">
+            <table class="clientes-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Teléfono</th>
+                        <th>Email</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-clientes-pago">
+                    {% for c in clientes %}
+                    <tr onclick="seleccionarClientePago(this)"
+                        data-id="{{ c.id }}"
+                        data-nombre="{{ c.nombre }}"
+                        data-telefono="{{ c.telefono }}"
+                        data-email="{{ c.email }}">
+                        <td>{{ c.id }}</td>
+                        <td>{{ c.nombre }}</td>
+                        <td>{{ c.telefono }}</td>
+                        <td>{{ c.email }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 
     <section class="pago-form-card">
         <div class="pago-form-header">
@@ -21,12 +61,8 @@
 
             <div class="campo">
                 <label>Cliente</label>
-                <select id="cliente_id" class="input-estilo" required>
-                    <option value="">Selecciona un cliente</option>
-                    {% for c in clientes %}
-                    <option value="{{ c.id }}">{{ c.nombre }}</option>
-                    {% endfor %}
-                </select>
+                <input id="cliente_nombre" placeholder="Cliente seleccionado" readonly>
+                <input id="cliente_id" type="hidden">
             </div>
 
             <div class="campo">
@@ -68,62 +104,98 @@
         </div>
     </section>
 
-    <section class="pagos-search-card">
-        <div class="pagos-search-header">
-            <h2>Buscar pagos</h2>
-        </div>
-
-        <div class="pagos-search-grid">
-            <div class="campo-tool">
-                <label for="buscarPago">Cliente</label>
-                <input type="text" id="buscarPago" placeholder="Buscar por cliente...">
-            </div>
-
-            <div class="campo-tool">
-                <label for="filtroFechaPago">Fecha</label>
-                <input type="date" id="filtroFechaPago">
-            </div>
-
-            <div class="campo-tool">
-                <label for="filtroMetodoPago">Método</label>
-                <select id="filtroMetodoPago">
-                    <option value="">Todos</option>
-                    <option value="efectivo">Efectivo</option>
-                    <option value="transferencia">Transferencia</option>
-                    <option value="tarjeta">Tarjeta</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="pago-form-buttons">
-            <button type="button" class="btn btn-primary" onclick="buscarPagosTabla()">Buscar</button>
-            <button type="button" class="btn btn-light" onclick="limpiarFiltrosPagos()">Limpiar filtros</button>
-        </div>
-    </section>
-
     <section class="pagos-table-card">
+        <div class="pagos-search-header">
+            <h2>Resumen anual del cliente</h2>
+        </div>
+
         <div class="pagos-table-wrapper">
             <table class="pagos-table">
                 <thead>
                     <tr>
-                        <!--<th>ID</th>-->
-                        <th>Fecha</th>
-                        <th>Cliente</th>
-                        <th>Referencia</th>
-                        <th>Importe</th>
-                        <th>Método</th>
+                        <th>Mes</th>
+                        <th>Cuota</th>
+                        <th>Pagado</th>
+                        <th>Pendiente</th>
+                        <th>Fecha pago</th>
+                        <th>Método pago</th>
                     </tr>
                 </thead>
-                <tbody id="tabla-pagos-body">
-                    <!-- Vacía al inicio -->
+                <tbody id="tabla-resumen-cuotas">
+                    <tr>
+                        <td colspan="6">Selecciona un cliente para ver su resumen anual.</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
     </section>
-
 </div>
 
 <script>
+
+let filasClientesPagoOriginales = [];
+
+document.addEventListener("DOMContentLoaded", function () {
+    filasClientesPagoOriginales = Array.from(document.querySelectorAll("#tabla-clientes-pago tr"));
+
+    document.getElementById("buscarClientePago").addEventListener("keyup", aplicarFiltroClientesPago);
+
+    aplicarFiltroClientesPago();
+});
+
+function aplicarFiltroClientesPago() {
+
+    if (
+        document.getElementById("cliente_id").value &&
+        document.getElementById("buscarClientePago").value ===
+        document.getElementById("cliente_nombre").value
+    ) {
+        return;
+    }
+
+    const filtroTexto = document.getElementById("buscarClientePago").value.toLowerCase().trim();
+    const tbody = document.getElementById("tabla-clientes-pago");
+
+    const filasFiltradas = filasClientesPagoOriginales.filter(fila => {
+        const nombre = (fila.dataset.nombre || "").toLowerCase();
+        return nombre.includes(filtroTexto);
+    });
+
+    tbody.innerHTML = "";
+
+    if (!filtroTexto) {
+        return;
+    }
+
+    filasFiltradas.forEach(fila => tbody.appendChild(fila));
+}
+
+function seleccionarClientePago(row) {
+
+    document.querySelectorAll("#tabla-clientes-pago tr").forEach(tr =>
+        tr.classList.remove("selected")
+    );
+
+    row.classList.add("selected");
+
+    document.getElementById("cliente_id").value = row.dataset.id;
+    document.getElementById("cliente_nombre").value = row.dataset.nombre;
+    document.getElementById("buscarClientePago").value = row.dataset.nombre;
+
+    const tbody = document.getElementById("tabla-clientes-pago");
+
+    const nuevaFila = row.cloneNode(true);
+
+    nuevaFila.onclick = function () {
+        seleccionarClientePago(nuevaFila);
+    };
+
+    tbody.innerHTML = "";
+    tbody.appendChild(nuevaFila);
+
+    cargarResumenClientePago();
+}
+
 function seleccionarPago(row) {
     document.querySelectorAll("#tabla-pagos-body tr").forEach(tr => tr.classList.remove("selected"));
     row.classList.add("selected");
@@ -279,7 +351,7 @@ async function enviarPago(url, payload, mensaje) {
         }
 
         alert(mensaje);
-        await buscarPagosTabla();
+        await cargarResumenClientePago();
         return true;
     } catch (error) {
         console.error(error);
@@ -347,16 +419,61 @@ async function eliminarPago() {
     }
 }
 
-document.getElementById("buscarPago").addEventListener("keyup", function () {
-    if (this.value.trim() !== "") {
-        buscarPagosTabla();
-    } else if (
-        !document.getElementById("filtroFechaPago").value &&
-        !document.getElementById("filtroMetodoPago").value
-    ) {
-        document.getElementById("tabla-pagos-body").innerHTML = "";
+async function cargarResumenClientePago() {
+    const clienteId = document.getElementById("cliente_id").value;
+
+    if (!clienteId) return;
+
+    const response = await fetch("/pagos/resumen-cliente", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            cliente_id: clienteId,
+            anio: new Date().getFullYear()
+        })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+        alert(data.error || "Error al cargar resumen");
+        return;
     }
-});
+
+    pintarResumenCuotas(data.resumen);
+    pintarTablaPagos(data.pagos);
+}
+
+function pintarResumenCuotas(resumen) {
+    const tbody = document.getElementById("tabla-resumen-cuotas");
+    tbody.innerHTML = "";
+
+    if (!resumen || resumen.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6">Este cliente no tiene cuotas registradas.</td>
+            </tr>
+        `;
+        return;
+    }
+
+    resumen.forEach(cuota => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+            <td>${cuota.mes}</td>
+            <td>${Number(cuota.cuota).toFixed(2)} €</td>
+            <td>${Number(cuota.pagado).toFixed(2)} €</td>
+            <td>${Number(cuota.pendiente).toFixed(2)} €</td>
+            <td>${cuota.fechas_pago || "-"}</td>
+            <td>${cuota.metodos_pago || "-"}</td>
+        `;
+
+        tbody.appendChild(tr);
+    });
+}
 </script>
 
 {% endblock %}

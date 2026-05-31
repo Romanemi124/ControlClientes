@@ -2,7 +2,7 @@ import calendar
 from datetime import date
 
 from app.database.db import get_connection
-
+from datetime import datetime
 
 def crear_cuota(cliente_id, anio, mes, importe):
     conn = get_connection()
@@ -408,6 +408,84 @@ def buscar_pagos(cliente_nombre="", fecha_pago="", metodo_pago=""):
     query += " ORDER BY p.fecha_pago DESC, p.id DESC"
 
     cursor.execute(query, params)
+    filas = cursor.fetchall()
+    conn.close()
+
+    return [dict(fila) for fila in filas]
+
+def obtener_resumen_cuotas_cliente(cliente_id, anio=None):
+    if anio is None:
+        anio = datetime.now().year
+        
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            cu.id AS cuota_id,
+            cu.anio,
+            cu.mes,
+            cu.importe_previsto,
+            cu.fecha_vencimiento,
+            COALESCE(SUM(ap.importe_aplicado), 0) AS total_pagado,
+            GROUP_CONCAT(DISTINCT p.fecha_pago) AS fechas_pago,
+            GROUP_CONCAT(DISTINCT p.metodo_pago) AS metodos_pago
+        FROM cuotas cu
+        LEFT JOIN aplicacion_pagos ap ON cu.id = ap.cuota_id
+        LEFT JOIN pagos p ON ap.pago_id = p.id
+        WHERE cu.cliente_id = ?
+          AND cu.anio = ?
+        GROUP BY cu.id
+        ORDER BY cu.mes ASC
+    """, (cliente_id, anio))
+
+    filas = cursor.fetchall()
+    conn.close()
+
+    meses = {
+        1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril",
+        5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto",
+        9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre",
+    }
+
+    resultado = []
+
+    for fila in filas:
+        cuota = float(fila["importe_previsto"] or 0)
+        pagado = float(fila["total_pagado"] or 0)
+        pendiente = cuota - pagado
+
+        resultado.append({
+            "mes": meses.get(fila["mes"], fila["mes"]),
+            "cuota": cuota,
+            "pagado": pagado,
+            "pendiente": max(pendiente, 0),
+            "fechas_pago": fila["fechas_pago"] or "",
+            "metodos_pago": fila["metodos_pago"] or "",
+        })
+
+    return resultado
+
+
+def obtener_pagos_cliente(cliente_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            p.id,
+            p.fecha_pago,
+            p.importe_pagado,
+            p.metodo_pago,
+            p.referencia,
+            p.observaciones,
+            c.nombre AS cliente_nombre
+        FROM pagos p
+        JOIN clientes c ON p.cliente_id = c.id
+        WHERE p.cliente_id = ?
+        ORDER BY p.fecha_pago DESC, p.id DESC
+    """, (cliente_id,))
+
     filas = cursor.fetchall()
     conn.close()
 
