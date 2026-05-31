@@ -7,6 +7,28 @@
     <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
+
+    <button
+        onclick="window.scrollTo({top: 0, behavior: 'smooth'})"
+        style="
+            position:fixed;
+            bottom:20px;
+            right:20px;
+            width:55px;
+            height:55px;
+            border:none;
+            border-radius:50%;
+            background:linear-gradient(90deg,#6366f1,#8b5cf6);
+            color:white;
+            font-size:24px;
+            cursor:pointer;
+            z-index:999999;
+            box-shadow:0 5px 15px rgba(0,0,0,0.25);
+        "
+    >
+        ↑
+    </button>
+
     <div class="layout">
         <aside class="sidebar">
             <div class="sidebar-brand">
@@ -35,5 +57,15 @@
     </div>
 
     <script src="/static/js/app.js"></script>
+
+    <script>
+    function subirArriba() {
+        document.querySelector(".main-content").scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+    }
+    </script>
+
 </body>
 </html>
