@@ -58,9 +58,6 @@ async def guardar_cliente(request: Request):
     if not nombre:
         errores.append("nombre")
 
-    if not telefono:
-        errores.append("teléfono")
-
     if not fecha_alta:
         errores.append("fecha de alta")
 
@@ -92,25 +89,27 @@ async def guardar_cliente(request: Request):
     # VALIDACIÓN TELÉFONO
     # =====================================================
 
-    telefono_limpio = telefono.replace(" ", "").replace("-", "")
+    if telefono:
 
-    if not telefono_limpio.isdigit():
-        return JSONResponse(
-            {
-                "ok": False,
-                "error": "El teléfono solo puede contener números"
-            },
-            status_code=400
-        )
+        telefono_limpio = telefono.replace(" ", "").replace("-", "")
 
-    if len(telefono_limpio) < 6 or len(telefono_limpio) > 15:
-        return JSONResponse(
-            {
-                "ok": False,
-                "error": "El teléfono no tiene un formato válido"
-            },
-            status_code=400
-        )
+        if not telefono_limpio.isdigit():
+            return JSONResponse(
+                {
+                    "ok": False,
+                    "error": "El teléfono solo puede contener números"
+                },
+                status_code=400
+            )
+
+        if len(telefono_limpio) < 6 or len(telefono_limpio) > 15:
+            return JSONResponse(
+                {
+                    "ok": False,
+                    "error": "El teléfono no tiene un formato válido"
+                },
+                status_code=400
+            )
 
     # =====================================================
     # NORMALIZAR ACTIVO

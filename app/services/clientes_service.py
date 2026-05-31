@@ -147,5 +147,6 @@ def get_clientes_mayor_deuda():
             clientes_deuda,
             key=lambda x: x["deuda_total"],
             reverse=True
+        
         )
     ]

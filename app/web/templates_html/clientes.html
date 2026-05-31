@@ -239,7 +239,6 @@ function validarCampos(p) {
     let errores = [];
 
     if (!p.nombre) errores.push("Nombre");
-    if (!p.telefono) errores.push("Teléfono");
     if (!p.fecha_alta) errores.push("Fecha de alta");
 
     if (p.email && !validarEmail(p.email)) {
